@@ -1,0 +1,9 @@
+<p>
+    <strong>This article is a {{ article.preprint.repository.object_name }} and
+        has not yet completed the peer review process.
+        <br>
+        This is version {{ article.preprint.current_version.version }} of
+        this {{ article.preprint.repository.object_name }}.
+    </strong>
+</p>
+<p>{{ article.abstract|safe }}</p>

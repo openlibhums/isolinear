@@ -10,3 +10,7 @@ Isolinear inserts HTML into Janeway hooks including:
   - Adds the option for Editors to create a new preprint version using an revised version of the authors manuscript.
  
 Preprint records are created automatically using the article metadata. Isolinear will take a manuscript file in DOCX, OTF or RTF format and convert it, with Pandoc, to PDF and insert a cover sheet with the title.
+
+Will require pandoc, pypdf and xetex
+
+sudo apt-get install texlive-xetex

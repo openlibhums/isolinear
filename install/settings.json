@@ -1,0 +1,47 @@
+[
+  {
+    "group": {
+      "name": "plugin:isolinear"
+    },
+    "setting": {
+      "description": "Enable the isolinear plugin. This will display options for editors to publish articles as preprints.",
+      "is_translatable": true,
+      "name": "enable_isolinear",
+      "pretty_name": "Enable Isolinear",
+      "type": "boolean"
+    },
+    "value": {
+      "default": ""
+    }
+  },
+  {
+    "group": {
+      "name": "plugin:isolinear"
+    },
+    "setting": {
+      "description": "Code of the repository where articles will be published as preprints.",
+      "is_translatable": true,
+      "name": "isolinear_repository_code",
+      "pretty_name": "Isolinear Repository Code",
+      "type": "char"
+    },
+    "value": {
+      "default": ""
+    }
+  },
+  {
+    "group": {
+      "name": "plugin:isolinear"
+    },
+    "setting": {
+      "description": "HTML for cover sheet, converted to PDF and spliced with the preprint PDF to generate the full PDF preprint.",
+      "is_translatable": true,
+      "name": "isolinear_cover_sheet",
+      "pretty_name": "Isolinear Cover Sheet",
+      "type": "rich-text"
+    },
+    "value": {
+      "default": "<h1>{{ repository.name }} {{ repository.object_name }}</h1>\n<p>Article Title: {{ article.title }}</p>\n<p>Authors: {% for author in authors %}{{ author.full_name }}{% if not forloop.last %}, {% endfor %}</p>\n<p>Contact Email: {{ article.correspondence_author.email }}</p>\n<p>License: {{ article.license.text }}</p>\n<p>Preprint Statement: This article is a preprint and has not been peer-reviewed.</p>\n<p>DOI: https://doi.org/{{ article.preprint.current_version.get_doi_pattern }}</p>\n<p>Preprint first posted online: {{ article.preprint.date_published }}</p>\n<p>Keywords: {% for keyword in article.preprint.keywords.all %}{{ keyword.word }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>"
+    }
+  }
+]

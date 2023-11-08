@@ -1,0 +1,86 @@
+{% extends "admin/core/base.html" %}
+{% load foundation %}
+
+{% block title %}Publish Article as Preprint{% endblock %}
+{% block title-section %}Publish Article as Preprint{% endblock %}
+{% block title-sub %}#{{ article.pk }} /
+    {{ article.correspondence_author.last_name }} /
+    {{ article.title }}{% endblock %}
+
+{% block breadcrumbs %}
+    <li><a href="{% url 'review_unassigned_article' article.pk %}">Editor
+        Assignment</a></li>
+    <li>Publish Article as Preprint</li>
+{% endblock breadcrumbs %}
+
+{% block body %}
+    <div class="box">
+        <div class="row expanded">
+            <div class="large-12 columns">
+                <div class="title-area">
+                    <h2>Select a File for Preprint Publication</h2>
+                </div>
+                <div class="content">
+                    {% if not article.preprint %}
+                        <div class="callout bs-callout bs-callout-warning">
+                            <p><span class="fa fa-exclamation-triangle"></span>
+                                Word Documents (DocX files) will be converted
+                                to
+                                PDF and have a cover sheet added. PDF files
+                                will
+                                have a cover sheet added. No other file types
+                                are
+                                supported.</p>
+                        </div>
+                        <p>Select a file uploaded by the author or <a
+                                href="{% url 'document_management' article.pk %}">
+                            upload a new file</a> to generate a preprint record
+                            in {{ repository.name }}.</p>
+                        <form method="POST">
+                            {% csrf_token %}
+                            {{ form|foundation }}
+                            <div class="row">
+                                <div class="large-12 columns">
+                                    <button class="button"
+                                            name="create_preprint">
+                                        Create Preprint with Selected File
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="bs-callout bs-callout-info">
+                            <p><span class="fa fa-info-circle"> </span> This
+                                article already has a published preprint with
+                                ID #{{ article.preprint.pk }}.</p>
+                            <p>You can control and oversee this preprint
+                                through the Preprint Manager (accessible via
+                                the link below). Any peer reviews and new
+                                versions will be incorporated automatically as
+                                soon as they are uploaded.</p>
+                            <p>
+                                <a target="_blank"
+                                   href="{{ article.preprint.repository.site_url }}/repository/view/{{ article.preprint.pk }}/"
+                                   class="button">View Live Preprint</a>
+                                <a target="_blank"
+                                   href="{{ article.preprint.repository.site_url }}/repository/manager/{{ article.preprint.pk }}/"
+                                   class="button">View Preprint Manager</a>
+                                <a href="{% url 'isolinear_create_new_version' article.pk %}"
+                                   class="button">Manage Preprint Versions</a>
+                            </p>
+                        </div>
+                        <div class="title-area">
+                            <h2>Current Version File:</h2>
+                        </div>
+                        <p>Version Number {{ article.preprint.current_version.version }} create at: {{ article.preprint.current_version.date_time }}</p>
+                        <iframe src="/{{ repository.short_name }}/repository/view/{{ article.preprint.pk }}/pdf/?file=/{{ repository.short_name }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
+                                width="100%" height="100%"
+                                style="min-height: 900px;" allowfullscreen
+                                webkitallowfullscreen></iframe>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

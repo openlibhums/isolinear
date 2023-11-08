@@ -1,0 +1,10 @@
+<ul>
+    {% for version in preprint.preprintversion_set.all %}
+        <li>
+            <a href="/{{ repository_code }}/repository/object/{{ preprint.pk }}/download/{{ version.file.pk }}/"><i
+                    class="fa fa-download">&nbsp;</i>{{ preprint.repository.object_name }}
+                Version {{ version.version }}
+                - {{ version.date_time|date:"Y-m-d" }}</a>
+        </li>
+    {% endfor %}
+</ul>

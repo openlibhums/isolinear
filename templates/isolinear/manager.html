@@ -1,0 +1,30 @@
+{% extends "admin/core/base.html" %}
+{% load foundation %}
+
+{% block page_title %}Isolinear Plugin Admin{% endblock page_title %}
+{% block title %}Isolinear Plugin Admin{% endblock %}
+
+{% block body %}
+    <div class="box">
+        <div class="content">
+            <div class="row expanded">
+                <div class="large-6 columns">
+                    <div class="title-area">
+                        <h2>Isolinear Plugin Settings</h2>
+                    </div>
+                    <p>The Isolinear Plugin has been developed for combined journal/preprint workflow. Below you can set the repository this journal is linked to and enable or disable the plugin.</p>
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ manager_form|foundation }}
+                        <div class="row expanded">
+                            <div class="large-12 columns">
+                                <button class="button success" type="submit">Save Settings</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
