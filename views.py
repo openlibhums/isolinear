@@ -144,6 +144,8 @@ def publish_preprint(request, article_id):
     )
 
 
+@has_journal
+@any_editor_user_required
 def create_new_version(request, article_id):
     article = get_object_or_404(
         submission_models.Article,
