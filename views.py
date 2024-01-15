@@ -213,11 +213,11 @@ class PreprintArticlesListView(FilteredArticlesListView):
     def get_facets(self):
 
         facets = {
-            'date_published__date__gte': {
+            'preprint__date_published__date__gte': {
                 'type': 'date',
                 'field_label': _('Published after'),
             },
-            'date_published__date__lte': {
+            'preprint__date_published__date__lte': {
                 'type': 'date',
                 'field_label': _('Published before'),
             },
@@ -238,12 +238,11 @@ class PreprintArticlesListView(FilteredArticlesListView):
 
     def get_order_by_choices(self):
         return [
+            ('-preprint__date_published', _('Newest')),
+            ('preprint__date_published', _('Oldest')),
             ('title', _('Titles A-Z')),
             ('-title', _('Titles Z-A')),
-            ('-date_published', _('Newest')),
-            ('date_published', _('Oldest')),
             ('correspondence_author__last_name', _('Author Name')),
-            ('primary_issue__volume', _('Volume')),
         ]
 
     def order_queryset(self, queryset):
@@ -253,7 +252,13 @@ class PreprintArticlesListView(FilteredArticlesListView):
         else:
             return queryset.order_by('pinnedarticle__sequence')
 
+    def get_order_by(self):
+        order_by = self.request.GET.get('order_by', '-preprint__date_published')
+        order_by_choices = self.get_order_by_choices()
+        return order_by if order_by in dict(order_by_choices) else ''
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_form'] = journal_forms.SearchForm()
+        context['preprints'] = True
         return context

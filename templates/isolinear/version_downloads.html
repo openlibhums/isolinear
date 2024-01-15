@@ -2,9 +2,9 @@
     {% for version in preprint.preprintversion_set.all %}
         <li>
             <a href="/{{ repository_code }}/repository/object/{{ preprint.pk }}/download/{{ version.file.pk }}/"><i
-                    class="fa fa-download">&nbsp;</i>{{ preprint.repository.object_name }}
-                Version {{ version.version }}
-                - {{ version.date_time|date:"Y-m-d" }}</a>
+                    class="fa fa-download">&nbsp;</i> Version {{ version.version }}</a><br />
+                    Published: {{ version.date_time|date:"Y-m-d" }}
+                    {% if version.get_doi %}<br />DOI: https://doi.org/{{ version.get_doi }}{% endif %}
         </li>
     {% endfor %}
 </ul>
