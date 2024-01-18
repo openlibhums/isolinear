@@ -65,6 +65,7 @@ def embed_pdf(context):
     plugin = plugin_settings.IsolinearPlugin.get_self()
     request = context.get('request')
     article = context.get('article')
+    preprint_version = context.get('preprint_version', None)
     isolinear_enabled = setting_handler.get_plugin_setting(
         plugin,
         'enable_isolinear',
@@ -83,6 +84,7 @@ def embed_pdf(context):
                 'article': article,
                 'preprint': article.preprint,
                 'repository_code': repository_code,
+                'preprint_version': preprint_version,
             }
         )
 

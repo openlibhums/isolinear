@@ -29,4 +29,9 @@ urlpatterns = [
         views.PreprintArticlesListView.as_view(),
         name='isolinear_preprint_list',
     ),
+    re_path(
+        r'^article/(?P<article_id>\d+)/version/(?P<version_number>\d+)/$',
+        views.preprint_version,
+        name='isolinear_preprint_version',
+    ),
 ]

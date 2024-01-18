@@ -208,6 +208,7 @@ class PreprintArticlesListView(FilteredArticlesListView):
         return self.queryset.filter(
             preprint__date_published__lte=timezone.now(),
             date_published__isnull=True,
+            date_declined__isnull=True,
         )
 
     def get_facets(self):
@@ -220,12 +221,6 @@ class PreprintArticlesListView(FilteredArticlesListView):
             'preprint__date_published__date__lte': {
                 'type': 'date',
                 'field_label': _('Published before'),
-            },
-            'section__pk': {
-                'type': 'foreign_key',
-                'model': submission_models.Section,
-                'field_label': _('Section'),
-                'choice_label_field': 'name',
             },
         }
         return self.filter_facets_if_journal(facets)
@@ -262,3 +257,34 @@ class PreprintArticlesListView(FilteredArticlesListView):
         context['search_form'] = journal_forms.SearchForm()
         context['preprints'] = True
         return context
+
+
+def preprint_version(request, article_id, version_number):
+    article = get_object_or_404(
+        submission_models.Article,
+        pk=article_id,
+        journal=request.journal,
+        preprint__isnull=False,
+    )
+    preprint_version = get_object_or_404(
+        repository_models.PreprintVersion,
+        preprint=article.preprint,
+        version=version_number,
+    )
+    repository_code = setting_handler.get_plugin_setting(
+        plugin=plugin_settings.IsolinearPlugin.get_self(),
+        setting_name='isolinear_repository_code',
+        journal=request.journal,
+    ).value
+    template = 'journal/preprint_version.html'
+    context = {
+        'article': article,
+        'preprint_version': preprint_version,
+        'repository_code': repository_code,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
