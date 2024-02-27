@@ -70,11 +70,12 @@
                                 <a href="{% url 'isolinear_rebuild_version_pdf' article.pk article.preprint.current_version.pk %}"
                                 class="button">Rebuild Version PDF</a>
                             </p>
+                        <p>Versions: {% for version in article.preprint.preprintversion_set.all %}{{version.pk}} - {{ version.version }}{%if not forloop.last %}, {%endif%}{%endfor%}</p>
                         </div>
                         <div class="title-area">
                             <h2>Current Version File:</h2>
                         </div>
-                        <p>Version Number {{ article.preprint.current_version.version }} create at: {{ article.preprint.current_version.date_time }}</p>
+                        <p>Version Number {{ article.preprint.current_version.version }} created at: {{ article.preprint.current_version.date_time }}</p>
                         <iframe src="/{{ repository.short_name }}/repository/view/{{ article.preprint.pk }}/pdf/?file=/{{ repository.short_name }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
                                 width="100%" height="100%"
                                 style="min-height: 900px;" allowfullscreen
