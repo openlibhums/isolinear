@@ -67,6 +67,8 @@
                                    class="button">View Preprint Manager</a>
                                 <a href="{% url 'isolinear_create_new_version' article.pk %}"
                                    class="button">Manage Preprint Versions</a>
+                                <a href="{% url 'isolinear_rebuild_version_pdf' article.pk article.preprint.current_version.pk %}"
+                                class="button">Rebuild Version PDF</a>
                             </p>
                         </div>
                         <div class="title-area">

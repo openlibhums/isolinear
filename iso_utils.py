@@ -76,13 +76,6 @@ def publish_repository_object_from_journal_article(article, repository, file):
     for keyword in article.keywords.all():
         preprint.keywords.add(keyword)
 
-    version, _ = repo_models.PreprintVersion.objects.get_or_create(
-        preprint=preprint,
-        version=1,
-        title=preprint.title,
-        abstract=preprint.abstract,
-    )
-
     file_path = get_pdf_path(
         article.journal,
         article,
@@ -104,9 +97,15 @@ def publish_repository_object_from_journal_article(article, repository, file):
             }
         )
         preprint.submission_file = preprint_file
-        version.file = preprint.submission_file
+
+        version, _ = repo_models.PreprintVersion.objects.get_or_create(
+            preprint=preprint,
+            version=1,
+            title=preprint.title,
+            abstract=preprint.abstract,
+            file=preprint.submission_file,
+        )
         preprint.save()
-        version.save()
 
     for author in article.frozen_authors():
         repo_models.PreprintAuthor.objects.get_or_create(
@@ -120,6 +119,24 @@ def publish_repository_object_from_journal_article(article, repository, file):
             repository=article.preprint.repository,
             preprint_versions=[version],
         )
+
+
+def recreate_version_file(article, version, file):
+    file_path = get_pdf_path(article.journal, article, file)
+    with open(file_path, 'rb') as preprint_pdf:
+        file = ContentFile(preprint_pdf.read())
+        file.name = f"{uuid4()}.pdf"
+
+        preprint_file = repo_models.PreprintFile.objects.create(
+            preprint=article.preprint,
+            file=file,
+            original_filename=article.manuscript_files.all().first().original_filename,
+            mime_type='application/pdf',
+            size=os.path.getsize(file_path),
+            uploaded=timezone.now(),
+        )
+        version.file = preprint_file
+        version.save()
 
 
 def publish_new_preprint_version(article, file):

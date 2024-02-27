@@ -1,0 +1,64 @@
+{% extends "admin/core/base.html" %}
+{% load foundation %}
+
+{% block title %}Update Article Preprint{% endblock %}
+{% block title-section %}Update Article Preprint{% endblock %}
+{% block title-sub %}#{{ article.pk }} /
+    {{ article.correspondence_author.last_name }} /
+    {{ article.title }}
+{% endblock %}
+
+{% block breadcrumbs %}
+    <li><a href="{% url 'review_unassigned_article' article.pk %}">Editor
+        Assignment</a></li>
+    <li>Rebuild Preprint PDF</li>
+{% endblock breadcrumbs %}
+
+{% block body %}
+    <div class="box">
+        <div class="row expanded">
+            <div class="large-12 columns">
+                <div class="title-area">
+                    <h2>Rebuild Version PDF</h2>
+                </div>
+                <div class="content">
+                    <div class="bs-callout-info bs-callout">
+                        <p>
+                            <span class="fa fa-info-circle"> </span>
+                            Use the options below to regenerate the PDF for
+                            this preprint. Note, this does not create a new
+                            version and simply replaces the existing file.
+                        </p>
+                    </div>
+                    <form method="POST">
+                        <p>Select a file uploaded by the author or <a
+                                href="{% url 'document_management' article.pk %}">
+                            upload a new file</a> to generate a new file.</p>
+                        {% csrf_token %}
+                        {{ form|foundation }}
+                        <div class="row expanded">
+                            <div class="large-12 columns">
+                                <button class="button"
+                                        name="create_preprint">
+                                    Create Preprint with Selected File
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="title-area">
+                        <h2>Current Version File:</h2>
+                    </div>
+                    <p>Version
+                        Number {{ article.preprint.current_version.version }}
+                        create
+                        at: {{ article.preprint.current_version.date_time }}</p>
+                    <iframe src="/{{ article.preprint.repository.short_name }}/repository/view/{{ article.preprint.pk }}/pdf/?file=/{{ article.preprint.repository.short_name }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
+                            width="100%" height="100%"
+                            style="min-height: 900px;" allowfullscreen
+                            webkitallowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

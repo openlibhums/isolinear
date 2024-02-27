@@ -17,7 +17,12 @@ urlpatterns = [
     re_path(
         r'^article/(?P<article_id>\d+)/new-version/$',
         views.create_new_version,
-            name='isolinear_create_new_version',
+        name='isolinear_create_new_version',
+    ),
+    re_path(
+        r'^article/(?P<article_id>\d+)/rebuild/(?P<version_id>\d+)/$',
+        views.rebuild_version_pdf,
+            name='isolinear_rebuild_version_pdf',
     ),
     re_path(
         r'^manager/$',

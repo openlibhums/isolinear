@@ -193,6 +193,58 @@ def create_new_version(request, article_id):
     )
 
 
+def rebuild_version_pdf(request, article_id, version_id):
+    article = get_object_or_404(
+        submission_models.Article,
+        pk=article_id,
+        journal=request.journal,
+    )
+    version = repository_models.PreprintVersion.objects.get(
+        preprint__article=article,
+        pk=version_id,
+    )
+    file_objs = article.manuscript_files.all().order_by('-last_modified')
+    form = forms.FileSelectionForm(
+        files=file_objs,
+    )
+    if request.POST:
+        form = forms.FileSelectionForm(
+            request.POST,
+            files=file_objs,
+        )
+        if form.is_valid():
+            file = form.cleaned_data.get('file')
+            iso_utils.recreate_version_file(
+                article,
+                version,
+                file,
+            )
+            messages.add_message(
+                request,
+                messages.SUCCESS,
+                'New file created',
+            )
+            return redirect(
+                reverse(
+                    'isolinear_rebuild_version_pdf',
+                    kwargs={
+                        'article_id': article.pk,
+                        'version_id': version.pk,
+                    }
+                )
+            )
+    template = 'isolinear/rebuild_version_pdf.html'
+    context = {
+        'article': article,
+        'form': form,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
 class PreprintArticlesListView(FilteredArticlesListView):
 
     """
