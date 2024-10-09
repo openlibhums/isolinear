@@ -277,12 +277,6 @@ class PreprintArticlesListView(FilteredArticlesListView):
         }
         return self.filter_facets_if_journal(facets)
 
-    def get_facet_queryset(self):
-        queryset = super().get_facet_queryset()
-        return queryset.filter(
-            preprint__date_published__lte=timezone.now(),
-        )
-
     def get_order_by_choices(self):
         return [
             ('-preprint__date_published', _('Newest')),
