@@ -112,7 +112,6 @@ def splice_pdf_files_together(article_file_path, cover_file_path):
 
     merger.close()
 
-    os.unlink(article_file_path)
     os.unlink(cover_file_path)
 
     return out_file_path
