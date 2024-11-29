@@ -1,7 +1,7 @@
 
 <p>
   <a href="/{{ repository_code }}/repository/view/{{ preprint.pk }}/pdf/?file=/{{ repository_code }}/repository/object/{{ preprint.pk }}/download/{% if preprint_version %}{{ preprint_version.file.pk }}{% else %}{{ preprint.current_version.file.pk }}{% endif %}/">
-    Download PDF
+    <i class="fa fa-download" aria-hidden="true"></i> Download PDF
   </a>
 </p>
 
