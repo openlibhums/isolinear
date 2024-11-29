@@ -10,7 +10,7 @@
         <li>
             <a href="{% site_url 'isolinear_preprint_version' article.pk version.version %}"><i
                     class="fa fa-link">&nbsp;</i> Version {{ version.version }}{% if version == preprint.current_version and not preprint.article.is_published %} (Latest Version) {% endif %}</a><br />
-            <a href="/{{ repository_code }}/repository/view/{{ preprint.pk }}/pdf/?file=/{{ repository_code }}/repository/object/{{ preprint.pk }}/download/{% if preprint_version %}{{ preprint_version.file.pk }}{% else %}{{ preprint.current_version.file.pk }}{% endif %}/">
+            <a target="_blank" href="/{{ repository_code }}/repository/object/{{ preprint.pk }}/download/{% if preprint_version %}{{ preprint_version.file.pk }}{% else %}{{ preprint.current_version.file.pk }}{% endif %}/">
               <i class="fa fa-download" aria-hidden="true"></i> Download Version PDF
             </a>
         <br />
