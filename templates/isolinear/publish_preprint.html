@@ -70,6 +70,9 @@
                                 {% if article.preprint.current_version %}
                                 <a href="{% url 'isolinear_rebuild_version_pdf' article.pk article.preprint.current_version.pk %}"
                                 class="button">Rebuild Version PDF</a>
+                                <a target="_blank"
+                                   href="{{ article.preprint.repository.site_url }}/identifiers/preprint/{{ article.preprint.pk }}/"
+                                   class="button">View Preprint Identifiers</a>
                                 {% endif %}
                             </p>
                         <p>Versions: {% for version in article.preprint.preprintversion_set.all %}{{version.pk}} - {{ version.version }}{%if not forloop.last %}, {%endif%}{%endfor%}</p>
