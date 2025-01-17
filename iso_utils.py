@@ -76,6 +76,36 @@ def publish_repository_object_from_journal_article(article, repository, file):
     for keyword in article.keywords.all():
         preprint.keywords.add(keyword)
 
+    # Create a dummy file to allow the PreprintVersion to be generated first,
+    # so the version ID can be used in the final file.
+    placeholder_file = ContentFile(b"")
+    placeholder_file.name = f"{uuid4()}_placeholder.pdf"
+
+    preprint_file, _ = repo_models.PreprintFile.objects.get_or_create(
+        preprint=preprint,
+        file=placeholder_file,
+        original_filename="placeholder.pdf",
+        mime_type="application/pdf",
+        size=0,
+        defaults={
+            'uploaded': timezone.now(),
+        },
+    )
+
+    version, _ = repo_models.PreprintVersion.objects.get_or_create(
+        preprint=preprint,
+        version=1,
+        title=preprint.title,
+        abstract=preprint.abstract,
+        file=preprint_file,
+    )
+
+    if article.preprint.repository.crossref_enable:
+        preprints.deposit_doi_for_preprint_version(
+            repository=article.preprint.repository,
+            preprint_versions=[version],
+        )
+
     file_path = get_pdf_path(
         article.journal,
         article,
@@ -86,25 +116,15 @@ def publish_repository_object_from_journal_article(article, repository, file):
         file = ContentFile(preprint_pdf.read())
         file.name = f"{uuid4()}.pdf"
 
-        preprint_file, _ = repo_models.PreprintFile.objects.get_or_create(
-            preprint=preprint,
-            file=file,
-            original_filename=article.manuscript_files.all().first().original_filename,
-            mime_type='application/pdf',
-            size=os.path.getsize(file_path),
-            defaults={
-                'uploaded': timezone.now(),
-            }
-        )
-        preprint.submission_file = preprint_file
+        preprint_file.file = file
+        preprint_file.original_filename = article.manuscript_files.all().first().original_filename
+        preprint_file.size = os.path.getsize(file_path)
+        preprint_file.save()
 
-        version, _ = repo_models.PreprintVersion.objects.get_or_create(
-            preprint=preprint,
-            version=1,
-            title=preprint.title,
-            abstract=preprint.abstract,
-            file=preprint.submission_file,
-        )
+        version.file = preprint_file
+        version.save()
+
+        preprint.submission_file = preprint_file
         preprint.save()
 
     for author in article.frozen_authors():
@@ -113,11 +133,6 @@ def publish_repository_object_from_journal_article(article, repository, file):
             account=author.author,
             order=author.order,
             affiliation=author.affiliation
-        )
-    if article.preprint.repository.crossref_enable:
-        preprints.deposit_doi_for_preprint_version(
-            repository=article.preprint.repository,
-            preprint_versions=[version],
         )
 
 
@@ -140,30 +155,54 @@ def recreate_version_file(article, version, file):
 
 
 def publish_new_preprint_version(article, file):
-    file_path = get_pdf_path(article.journal, article, file)
-    with open(file_path, 'rb') as preprint_pdf:
-        file = ContentFile(preprint_pdf.read())
-        file.name = f"{uuid4()}.pdf"
+    """
+    Publishes a new preprint version and attaches a generated PDF file.
+    Ensures the version ID is included in the cover sheet by creating the
+    version before generating the file.
+    """
+    # Create a placeholder PreprintFile object
+    placeholder_file = ContentFile(b"")
+    placeholder_file.name = f"{uuid4()}_placeholder.pdf"
 
-        preprint_file, _ = repo_models.PreprintFile.objects.get_or_create(
-            preprint=article.preprint,
-            file=file,
-            original_filename=article.manuscript_files.all().first().original_filename,
-            mime_type='application/pdf',
-            size=os.path.getsize(file_path),
-            defaults={
-                'uploaded': timezone.now(),
-            }
+    preprint_file, _ = repo_models.PreprintFile.objects.get_or_create(
+        preprint=article.preprint,
+        file=placeholder_file,
+        original_filename="placeholder.pdf",
+        mime_type="application/pdf",
+        size=0,
+        defaults={
+            "uploaded": timezone.now(),
+        }
+    )
+
+    # Create the version with the placeholder file
+    version, _ = repo_models.PreprintVersion.objects.get_or_create(
+        preprint=article.preprint,
+        file=preprint_file,
+        version=article.preprint.next_version_number(),
+        title=article.preprint.title,
+        abstract=article.preprint.abstract,
+    )
+
+    if article.preprint.repository.crossref_enable:
+        preprints.deposit_doi_for_preprint_version(
+            repository=article.preprint.repository,
+            preprint_versions=[version],
         )
-        version, _ = repo_models.PreprintVersion.objects.get_or_create(
-            preprint=article.preprint,
-            file=preprint_file,
-            version=article.preprint.next_version_number(),
-            title=article.preprint.title,
-            abstract=article.preprint.abstract,
-        )
-        if article.preprint.repository.crossref_enable:
-            preprints.deposit_doi_for_preprint_version(
-                repository=article.preprint.repository,
-                preprint_versions=[version],
-            )
+
+    # Generate the actual PDF file with the version ID on the cover sheet
+    file_path = get_pdf_path(article.journal, article, file)
+    with open(file_path, "rb") as preprint_pdf:
+        generated_file = ContentFile(preprint_pdf.read())
+        generated_file.name = f"{uuid4()}.pdf"
+
+    # Update the PreprintFile with the generated file
+    preprint_file.file = generated_file
+    preprint_file.original_filename = article.manuscript_files.all().first().original_filename
+    preprint_file.size = os.path.getsize(file_path)
+    preprint_file.save()
+
+    # Update the version with the final file
+    version.file = preprint_file
+    version.save()
+

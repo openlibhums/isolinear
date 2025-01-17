@@ -16,7 +16,11 @@ from journal import forms as journal_forms
 @has_journal
 @any_editor_user_required
 def index(request):
-    pass
+    return redirect(
+        reverse(
+            'isolinear_manager',
+        )
+    )
 
 
 @has_journal
