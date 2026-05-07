@@ -190,7 +190,7 @@
       <div class="title-area"><h2>Current Version PDF — v{{ article.preprint.current_version.version }}</h2></div>
       <div class="content">
         <iframe class="iso-pdf-frame"
-                src="/{{ repository.short_name }}/repository/view/{{ article.preprint.pk }}/pdf/?file=/{{ repository.short_name }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
+                src="{{ repository.site_url }}/repository/view/{{ article.preprint.pk }}/pdf/?file={{ repository.site_url }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
                 allowfullscreen webkitallowfullscreen></iframe>
       </div>
     </div>
