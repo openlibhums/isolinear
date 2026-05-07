@@ -8,7 +8,6 @@ from repository import models as repo_models
 from utils import setting_handler
 from plugins.isolinear import convert, plugin_settings
 from core import files
-from identifiers import preprints
 
 
 def get_pdf_path(journal, article, file):
@@ -100,7 +99,8 @@ def publish_repository_object_from_journal_article(article, repository, file):
         file=preprint_file,
     )
 
-    if article.preprint.repository.crossref_enable:
+    if plugin_settings.MINT_DOIS and article.preprint.repository.crossref_enable:
+        from identifiers import preprints
         preprints.deposit_doi_for_preprint_version(
             repository=article.preprint.repository,
             preprint_versions=[version],
@@ -184,7 +184,8 @@ def publish_new_preprint_version(article, file):
         abstract=article.preprint.abstract,
     )
 
-    if article.preprint.repository.crossref_enable:
+    if plugin_settings.MINT_DOIS and article.preprint.repository.crossref_enable:
+        from identifiers import preprints
         preprints.deposit_doi_for_preprint_version(
             repository=article.preprint.repository,
             preprint_versions=[version],

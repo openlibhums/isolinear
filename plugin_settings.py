@@ -11,6 +11,10 @@ MANAGER_URL = 'isolinear_index'
 JANEWAY_VERSION = "1.5.0"
 IS_WORKFLOW_PLUGIN = False
 
+# Set to True on installs where ``identifiers.preprints`` is available and
+# Crossref DOI minting for preprint versions should run.
+MINT_DOIS = False
+
 MS_MIMES_FOR_PREPRINTS = [
     'application/pdf',
     'application/x-pdf',
