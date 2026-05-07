@@ -35,11 +35,9 @@
                                 {{ article.safe_title }}
                             {% endif %}
                         </h3>
-                        {% if article.date_published or article.stage == 'preprint_published' or article.stage == 'Published' %}
-                            <span class="label label-tl-red">{% trans "Published" %}</span>
-                        {% elif article.date_declined or article.stage == 'Rejected' %}
+                        {% if article.date_declined or article.stage == 'Rejected' %}
                             <span class="label label-tl-red">{% trans "Declined" %}</span>
-                        {% else %}
+                        {% elif not article.date_published and article.stage != 'preprint_published' and article.stage != 'Published' %}
                             <span class="label label-tl-amber">{% trans "Under Review" %}</span>
                         {% endif %}
                     </div>
