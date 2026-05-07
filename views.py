@@ -351,8 +351,14 @@ def serve_preprint_pdf(request, article_id, version_number):
     )
     if not preprint_version.file or not preprint_version.file.file:
         raise Http404
-    return FileResponse(
+    response = FileResponse(
         preprint_version.file.file.open('rb'),
         content_type='application/pdf',
+        as_attachment=False,
+        filename=f'preprint-{article.pk}-v{preprint_version.version}.pdf',
     )
+    response['Content-Disposition'] = (
+        f'inline; filename="preprint-{article.pk}-v{preprint_version.version}.pdf"'
+    )
+    return response
 
