@@ -25,6 +25,12 @@
           <span class="fa fa-exclamation-triangle"></span>
           <span>Word Documents (DocX files) will be converted to PDF and have a cover sheet added. PDF files will have a cover sheet added. No other file types are supported.</span>
         </div>
+        {% if not mint_dois %}
+        <div class="iso-notice iso-notice-info">
+          <span class="fa fa-info-circle"></span>
+          <span>DOI minting is disabled on this install. Preprints will be published without a Crossref DOI deposit.</span>
+        </div>
+        {% endif %}
         <p>Select a file uploaded by the author or <a href="{% url 'document_management' article.pk %}">upload a new file</a> to generate a preprint record in {{ repository.name }}.</p>
         <form method="POST" class="iso-file-form">
           {% csrf_token %}

@@ -140,6 +140,7 @@ def publish_preprint(request, article_id):
         'article': article,
         'repository': repository,
         'form': form,
+        'mint_dois': plugin_settings.MINT_DOIS,
     }
     return render(
         request,
