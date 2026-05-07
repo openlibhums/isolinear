@@ -1,3 +1,4 @@
+from django.http import FileResponse, Http404
 from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
@@ -326,5 +327,32 @@ def preprint_version(request, article_id, version_number):
         request,
         template,
         context,
+    )
+
+
+@has_journal
+def serve_preprint_pdf(request, article_id, version_number):
+    """Serve a preprint version's PDF file from the journal host.
+
+    Same-origin alternative to the repository's PDF viewer, used so the
+    iframe embed isn't blocked by ``X-Frame-Options: SAMEORIGIN`` when the
+    journal and repository live on different domains.
+    """
+    article = get_object_or_404(
+        submission_models.Article,
+        pk=article_id,
+        journal=request.journal,
+        preprint__isnull=False,
+    )
+    preprint_version = get_object_or_404(
+        repository_models.PreprintVersion,
+        preprint=article.preprint,
+        version=version_number,
+    )
+    if not preprint_version.file or not preprint_version.file.file:
+        raise Http404
+    return FileResponse(
+        preprint_version.file.file.open('rb'),
+        content_type='application/pdf',
     )
 
