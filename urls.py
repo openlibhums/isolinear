@@ -41,7 +41,12 @@ urlpatterns = [
     ),
     re_path(
         r'^article/(?P<article_id>\d+)/version/(?P<version_number>\d+)/pdf/$',
-        views.serve_preprint_pdf,
+        views.preprint_pdf_viewer,
         name='isolinear_preprint_pdf',
+    ),
+    re_path(
+        r'^article/(?P<article_id>\d+)/version/(?P<version_number>\d+)/pdf-file/$',
+        views.serve_preprint_pdf_file,
+        name='isolinear_preprint_pdf_file',
     ),
 ]

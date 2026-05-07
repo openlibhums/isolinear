@@ -330,35 +330,54 @@ def preprint_version(request, article_id, version_number):
     )
 
 
-@has_journal
-def serve_preprint_pdf(request, article_id, version_number):
-    """Serve a preprint version's PDF file from the journal host.
-
-    Same-origin alternative to the repository's PDF viewer, used so the
-    iframe embed isn't blocked by ``X-Frame-Options: SAMEORIGIN`` when the
-    journal and repository live on different domains.
-    """
+def _get_preprint_version_for_request(request, article_id, version_number):
     article = get_object_or_404(
         submission_models.Article,
         pk=article_id,
         journal=request.journal,
         preprint__isnull=False,
     )
-    preprint_version = get_object_or_404(
+    return article, get_object_or_404(
         repository_models.PreprintVersion,
         preprint=article.preprint,
         version=version_number,
     )
-    if not preprint_version.file or not preprint_version.file.file:
+
+
+@has_journal
+def preprint_pdf_viewer(request, article_id, version_number):
+    """Render the pdf.js viewer for a preprint version on the journal host.
+
+    The viewer HTML is same-origin with the embedding page, sidestepping
+    ``X-Frame-Options: SAMEORIGIN`` on cross-domain repository hosts.
+    """
+    article, version = _get_preprint_version_for_request(
+        request, article_id, version_number,
+    )
+    pdf_url = reverse(
+        'isolinear_preprint_pdf_file',
+        kwargs={
+            'article_id': article.pk,
+            'version_number': version.version,
+        },
+    )
+    return render(
+        request,
+        'isolinear/pdf_viewer.html',
+        {'pdf_url': pdf_url},
+    )
+
+
+@has_journal
+def serve_preprint_pdf_file(request, article_id, version_number):
+    """Stream a preprint version's PDF bytes — fetched by the pdf.js viewer."""
+    _, version = _get_preprint_version_for_request(
+        request, article_id, version_number,
+    )
+    if not version.file or not version.file.file:
         raise Http404
-    response = FileResponse(
-        preprint_version.file.file.open('rb'),
+    return FileResponse(
+        version.file.file.open('rb'),
         content_type='application/pdf',
-        as_attachment=False,
-        filename=f'preprint-{article.pk}-v{preprint_version.version}.pdf',
     )
-    response['Content-Disposition'] = (
-        f'inline; filename="preprint-{article.pk}-v{preprint_version.version}.pdf"'
-    )
-    return response
 
