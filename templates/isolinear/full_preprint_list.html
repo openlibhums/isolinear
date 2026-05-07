@@ -1,0 +1,77 @@
+{% extends "admin/core/base.html" %}
+{% load foundation static %}
+
+{% block css %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/isolinear.css' %}">{% endblock %}
+
+{% block title %}Preprint List{% endblock %}
+{% block title-section %}Preprint List{% endblock %}
+{% block title-sub %}All articles with an associated preprint record{% endblock %}
+
+{% block breadcrumbs %}
+    {{ block.super }}
+    <li><a href="{% url 'isolinear_manager' %}">Isolinear</a></li>
+    <li>Preprints</li>
+{% endblock %}
+
+{% block body %}
+<div class="rummage-portal">
+
+  <div>
+    {% include "admin/elements/list_filters.html" %}
+  </div>
+
+  <div class="box">
+    <div class="title-area">
+      <h2>Preprints</h2>
+      <span>{{ paginator.count }} article{{ paginator.count|pluralize }}</span>
+    </div>
+    <div>
+      {% include "common/elements/sorting.html" with form_id=facet_form.id %}
+    </div>
+
+    <table class="iso-versions-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Article</th>
+          <th>Authors</th>
+          <th>Preprint Published</th>
+          <th>Stage</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for article in object_list %}
+        <tr>
+          <td>{{ article.pk }}</td>
+          <td>
+            <a href="{% url 'isolinear_publish_preprint' article.pk %}">{{ article.safe_title }}</a>
+            {% if article.preprint.preprint_doi %}
+            <div style="font-size:.78rem;color:#888;margin-top:.2rem;">{{ article.preprint.preprint_doi }}</div>
+            {% endif %}
+          </td>
+          <td>{{ article.author_list }}</td>
+          <td>{{ article.preprint.date_published|date:"j M Y" }}</td>
+          <td>{{ article.stage }}</td>
+          <td>
+            <a href="{% url 'isolinear_publish_preprint' article.pk %}" class="button small">Manage</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="vae-empty-state">
+              <span class="fa fa-inbox"></span>
+              No preprints found.
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% include "common/elements/pagination.html" with form_id=facet_form.id %}
+  </div>
+
+</div>
+{% endblock %}

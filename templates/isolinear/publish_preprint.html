@@ -1,94 +1,196 @@
 {% extends "admin/core/base.html" %}
-{% load foundation %}
+{% load foundation static %}
+
+{% block css %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/isolinear.css' %}">{% endblock %}
 
 {% block title %}Publish Article as Preprint{% endblock %}
 {% block title-section %}Publish Article as Preprint{% endblock %}
-{% block title-sub %}#{{ article.pk }} /
-    {{ article.correspondence_author.last_name }} /
-    {{ article.title }}{% endblock %}
+{% block title-sub %}#{{ article.pk }} / {{ article.correspondence_author.last_name }} / {{ article.safe_title }}{% endblock %}
 
 {% block breadcrumbs %}
-    <li><a href="{% url 'review_unassigned_article' article.pk %}">Editor
-        Assignment</a></li>
+    <li><a href="{% url 'review_unassigned_article' article.pk %}">Editor Assignment</a></li>
     <li>Publish Article as Preprint</li>
-{% endblock breadcrumbs %}
+{% endblock %}
 
 {% block body %}
-    <div class="box">
-        <div class="row expanded">
-            <div class="large-12 columns">
-                <div class="title-area">
-                    <h2>Select a File for Preprint Publication</h2>
-                </div>
-                <div class="content">
-                    {% if not article.preprint %}
-                        <div class="callout bs-callout bs-callout-warning">
-                            <p><span class="fa fa-exclamation-triangle"></span>
-                                Word Documents (DocX files) will be converted
-                                to
-                                PDF and have a cover sheet added. PDF files
-                                will
-                                have a cover sheet added. No other file types
-                                are
-                                supported.</p>
-                        </div>
-                        <p>Select a file uploaded by the author or <a
-                                href="{% url 'document_management' article.pk %}">
-                            upload a new file</a> to generate a preprint record
-                            in {{ repository.name }}.</p>
-                        <form method="POST">
-                            {% csrf_token %}
-                            {{ form|foundation }}
-                            <div class="row">
-                                <div class="large-12 columns">
-                                    <button class="button"
-                                            name="create_preprint">
-                                        Create Preprint with Selected File
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    {% else %}
-                        <div class="bs-callout bs-callout-info">
-                            <p><span class="fa fa-info-circle"> </span> This
-                                article has a published preprint with
-                                ID #{{ article.preprint.pk }}.</p>
-                            <p>You can control and oversee this preprint
-                                through the Preprint Manager (accessible via
-                                the link below). Any peer reviews and new
-                                versions will be incorporated automatically as
-                                soon as they are uploaded.</p>
-                            <p>
-                                <a target="_blank"
-                                   href="{{ article.preprint.repository.site_url }}/repository/view/{{ article.preprint.pk }}/"
-                                   class="button">View Live Preprint</a>
-                                <a target="_blank"
-                                   href="{{ article.preprint.repository.site_url }}/repository/manager/{{ article.preprint.pk }}/"
-                                   class="button">View Preprint Manager</a>
-                                <a href="{% url 'isolinear_create_new_version' article.pk %}"
-                                   class="button">Manage Preprint Versions</a>
-                                {% if article.preprint.current_version %}
-                                <a href="{% url 'isolinear_rebuild_version_pdf' article.pk article.preprint.current_version.pk %}"
-                                class="button">Rebuild Version PDF</a>
-                                <a target="_blank"
-                                   href="{{ article.preprint.repository.site_url }}/identifiers/preprint/{{ article.preprint.pk }}/"
-                                   class="button">View Preprint Identifiers</a>
-                                {% endif %}
-                            </p>
-                        <p>Versions: {% for version in article.preprint.preprintversion_set.all %}{{version.pk}} - {{ version.version }}{%if not forloop.last %}, {%endif%}{%endfor%}</p>
-                        </div>
-                        <div class="title-area">
-                            <h2>Current Version File:</h2>
-                        </div>
-                        <p>Version Number {{ article.preprint.current_version.version }} created at: {{ article.preprint.current_version.date_time }}</p>
-                        <iframe src="/{{ repository.short_name }}/repository/view/{{ article.preprint.pk }}/pdf/?file=/{{ repository.short_name }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
-                                width="100%" height="100%"
-                                style="min-height: 900px;" allowfullscreen
-                                webkitallowfullscreen></iframe>
-                    {% endif %}
-                </div>
-            </div>
+
+{% if not article.preprint %}
+
+<div class="box">
+  <div class="row expanded">
+    <div class="large-8 columns">
+      <div class="title-area"><h2>Select a File for Preprint Publication</h2></div>
+      <div class="content">
+        <div class="iso-notice iso-notice-warning">
+          <span class="fa fa-exclamation-triangle"></span>
+          <span>Word Documents (DocX files) will be converted to PDF and have a cover sheet added. PDF files will have a cover sheet added. No other file types are supported.</span>
         </div>
+        <p>Select a file uploaded by the author or <a href="{% url 'document_management' article.pk %}">upload a new file</a> to generate a preprint record in {{ repository.name }}.</p>
+        <form method="POST" class="iso-file-form">
+          {% csrf_token %}
+          {{ form|foundation }}
+          <button class="button success" name="create_preprint">
+            <span class="fa fa-cloud-upload"></span> Create Preprint with Selected File
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+
+<div class="row expanded">
+
+  <div class="large-5 columns">
+
+    <div class="box">
+      <div class="title-area"><h2>Article Details</h2></div>
+      <div class="content">
+        <table class="iso-meta-table">
+          <tbody>
+            <tr>
+              <th>Article ID</th>
+              <td>#{{ article.pk }}</td>
+            </tr>
+            <tr>
+              <th>Preprint ID</th>
+              <td>#{{ article.preprint.pk }}</td>
+            </tr>
+            {% if article.section %}
+            <tr>
+              <th>Section</th>
+              <td>{{ article.section.name }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <th>Submitted</th>
+              <td>{{ article.date_submitted|date:"j F Y" }}</td>
+            </tr>
+            <tr>
+              <th>Preprint Published</th>
+              <td>{{ article.preprint.date_published|date:"j F Y" }}</td>
+            </tr>
+            {% if article.date_accepted %}
+            <tr>
+              <th>Article Accepted</th>
+              <td>{{ article.date_accepted|date:"j F Y" }}</td>
+            </tr>
+            {% endif %}
+            {% if article.date_published %}
+            <tr>
+              <th>Article Published</th>
+              <td>{{ article.date_published|date:"j F Y" }}</td>
+            </tr>
+            {% endif %}
+            {% if article.date_declined %}
+            <tr>
+              <th>Declined</th>
+              <td>{{ article.date_declined|date:"j F Y" }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <th>Stage</th>
+              <td>{{ article.stage }}</td>
+            </tr>
+            {% if article.get_doi %}
+            <tr>
+              <th>Article DOI</th>
+              <td>{{ article.get_doi }}</td>
+            </tr>
+            {% endif %}
+            {% if article.preprint.preprint_doi %}
+            <tr>
+              <th>Preprint DOI</th>
+              <td>{{ article.preprint.preprint_doi }}</td>
+            </tr>
+            {% endif %}
+            {% if article.license %}
+            <tr>
+              <th>Licence</th>
+              <td>{{ article.license.name }}</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
     </div>
 
+    <div class="box">
+      <div class="title-area"><h2>Versions</h2></div>
+      <div class="content">
+        <table class="iso-versions-table">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for version in article.preprint.preprintversion_set.all %}
+            <tr>
+              <td>
+                <a href="{% url 'isolinear_preprint_version' article.pk version.version %}">v{{ version.version }}</a>
+                {% if version == article.preprint.current_version %}<span class="current-chip">current</span>{% endif %}
+              </td>
+              <td>{{ version.date_time|date:"j M Y, H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="title-area"><h2>Actions</h2></div>
+      <div class="content">
+        <div class="iso-action-group">
+          {% if article.current_workflow_element %}
+          <a href="{{ article.current_workflow_element_url }}" class="button expanded">
+            <span class="fa fa-arrow-circle-right"></span>
+            Current Workflow: {{ article.current_workflow_element.element_name|title }}
+          </a>
+          {% endif %}
+          <a href="{{ article.preprint.url }}" target="_blank" class="button expanded">
+            <span class="fa fa-external-link"></span> View Live Preprint
+          </a>
+          {% if article.date_published and article.url %}
+          <a href="{{ article.url }}" target="_blank" class="button success expanded">
+            <span class="fa fa-book"></span> View Published Article
+          </a>
+          {% endif %}
+          <a href="{{ article.preprint.repository.site_url }}/repository/manager/{{ article.preprint.pk }}/" target="_blank" class="button expanded">
+            <span class="fa fa-cog"></span> Preprint Manager
+          </a>
+          <a href="{% url 'isolinear_create_new_version' article.pk %}" class="button expanded">
+            <span class="fa fa-files-o"></span> Manage Versions
+          </a>
+          {% if article.preprint.current_version %}
+          <a href="{% url 'isolinear_rebuild_version_pdf' article.pk article.preprint.current_version.pk %}" class="button warning expanded">
+            <span class="fa fa-refresh"></span> Rebuild Version PDF
+          </a>
+          <a href="{{ article.preprint.repository.site_url }}/identifiers/preprint/{{ article.preprint.pk }}/" target="_blank" class="button expanded">
+            <span class="fa fa-id-card"></span> Preprint Identifiers
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="large-7 columns">
+    <div class="box">
+      <div class="title-area"><h2>Current Version PDF — v{{ article.preprint.current_version.version }}</h2></div>
+      <div class="content">
+        <iframe class="iso-pdf-frame"
+                src="/{{ repository.short_name }}/repository/view/{{ article.preprint.pk }}/pdf/?file=/{{ repository.short_name }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
+                allowfullscreen webkitallowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endif %}
 {% endblock %}

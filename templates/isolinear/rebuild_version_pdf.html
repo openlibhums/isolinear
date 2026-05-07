@@ -1,64 +1,105 @@
 {% extends "admin/core/base.html" %}
-{% load foundation %}
+{% load foundation static %}
 
-{% block title %}Update Article Preprint{% endblock %}
-{% block title-section %}Update Article Preprint{% endblock %}
-{% block title-sub %}#{{ article.pk }} /
-    {{ article.correspondence_author.last_name }} /
-    {{ article.title }}
-{% endblock %}
+{% block css %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/isolinear.css' %}">{% endblock %}
+
+{% block title %}Rebuild Preprint PDF{% endblock %}
+{% block title-section %}Rebuild Preprint PDF{% endblock %}
+{% block title-sub %}#{{ article.pk }} / {{ article.correspondence_author.last_name }} / {{ article.safe_title }}{% endblock %}
 
 {% block breadcrumbs %}
-    <li><a href="{% url 'review_unassigned_article' article.pk %}">Editor
-        Assignment</a></li>
-    <li>Rebuild Preprint PDF</li>
-{% endblock breadcrumbs %}
+    <li><a href="{% url 'review_unassigned_article' article.pk %}">Editor Assignment</a></li>
+    <li><a href="{% url 'isolinear_publish_preprint' article.pk %}">Preprint</a></li>
+    <li>Rebuild Version PDF</li>
+{% endblock %}
 
 {% block body %}
+<div class="row expanded">
+
+  <div class="large-5 columns">
+
     <div class="box">
-        <div class="row expanded">
-            <div class="large-12 columns">
-                <div class="title-area">
-                    <h2>Rebuild Version PDF</h2>
-                </div>
-                <div class="content">
-                    <div class="bs-callout-info bs-callout">
-                        <p>
-                            <span class="fa fa-info-circle"> </span>
-                            Use the options below to regenerate the PDF for
-                            this preprint. Note, this does not create a new
-                            version and simply replaces the existing file.
-                        </p>
-                    </div>
-                    <form method="POST">
-                        <p>Select a file uploaded by the author or <a
-                                href="{% url 'document_management' article.pk %}">
-                            upload a new file</a> to generate a new file.</p>
-                        {% csrf_token %}
-                        {{ form|foundation }}
-                        <div class="row expanded">
-                            <div class="large-12 columns">
-                                <button class="button"
-                                        name="create_preprint">
-                                    Create Preprint with Selected File
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                    <div class="title-area">
-                        <h2>Current Version File:</h2>
-                    </div>
-                    <p>Version
-                        Number {{ article.preprint.current_version.version }}
-                        create
-                        at: {{ article.preprint.current_version.date_time }}</p>
-                    <iframe src="/{{ article.preprint.repository.short_name }}/repository/view/{{ article.preprint.pk }}/pdf/?file=/{{ article.preprint.repository.short_name }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
-                            width="100%" height="100%"
-                            style="min-height: 900px;" allowfullscreen
-                            webkitallowfullscreen></iframe>
-                </div>
-            </div>
+      <div class="title-area"><h2>Rebuild PDF</h2></div>
+      <div class="content">
+        <div class="iso-notice iso-notice-warning">
+          <span class="fa fa-exclamation-triangle"></span>
+          <span>This replaces the existing PDF for the current version without creating a new version. Use this to fix a broken or incorrect PDF file.</span>
         </div>
+        <p>Select a file uploaded by the author or <a href="{% url 'document_management' article.pk %}">upload a new file</a> to regenerate the PDF.</p>
+        <form method="POST" class="iso-file-form">
+          {% csrf_token %}
+          {{ form|foundation }}
+          <button class="button warning" name="create_preprint">
+            <span class="fa fa-refresh"></span> Rebuild PDF
+          </button>
+        </form>
+      </div>
     </div>
 
+    <div class="box">
+      <div class="title-area"><h2>Current Version</h2></div>
+      <div class="content">
+        <table class="iso-meta-table">
+          <tbody>
+            <tr>
+              <th>Version</th>
+              <td>v{{ article.preprint.current_version.version }}</td>
+            </tr>
+            <tr>
+              <th>Created</th>
+              <td>{{ article.preprint.current_version.date_time|date:"j F Y, H:i" }}</td>
+            </tr>
+            {% if article.preprint.preprint_doi %}
+            <tr>
+              <th>Preprint DOI</th>
+              <td>{{ article.preprint.preprint_doi }}</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="title-area"><h2>Actions</h2></div>
+      <div class="content">
+        <div class="iso-action-group">
+          {% if article.current_workflow_element %}
+          <a href="{{ article.current_workflow_element_url }}" class="button expanded">
+            <span class="fa fa-arrow-circle-right"></span>
+            Current Workflow: {{ article.current_workflow_element.element_name|title }}
+          </a>
+          {% endif %}
+          <a href="{% url 'isolinear_publish_preprint' article.pk %}" class="button expanded">
+            <span class="fa fa-file-text-o"></span> Preprint Overview
+          </a>
+          <a href="{% url 'isolinear_create_new_version' article.pk %}" class="button expanded">
+            <span class="fa fa-files-o"></span> Manage Versions
+          </a>
+          <a href="{{ article.preprint.url }}" target="_blank" class="button expanded">
+            <span class="fa fa-external-link"></span> View Live Preprint
+          </a>
+          {% if article.date_published and article.url %}
+          <a href="{{ article.url }}" target="_blank" class="button success expanded">
+            <span class="fa fa-book"></span> View Published Article
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="large-7 columns">
+    <div class="box">
+      <div class="title-area"><h2>Current Version PDF — v{{ article.preprint.current_version.version }}</h2></div>
+      <div class="content">
+        <iframe class="iso-pdf-frame"
+                src="/{{ article.preprint.repository.short_name }}/repository/view/{{ article.preprint.pk }}/pdf/?file=/{{ article.preprint.repository.short_name }}/repository/object/{{ article.preprint.pk }}/download/{{ article.preprint.current_version.file.pk }}/"
+                allowfullscreen webkitallowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+</div>
 {% endblock %}

@@ -8,7 +8,7 @@ from submission import models as submission_models
 from repository import models as repository_models
 from utils import setting_handler
 from core import forms as core_forms, models as core_models
-from core.views import FilteredArticlesListView
+from core.views import GenericFacetedListView
 from security.decorators import has_journal, any_editor_user_required
 from journal import forms as journal_forms
 
@@ -249,64 +249,40 @@ def rebuild_version_pdf(request, article_id, version_id):
     )
 
 
-class PreprintArticlesListView(FilteredArticlesListView):
-
+class PreprintArticlesListView(GenericFacetedListView):
     """
-    A list of published articles that can be searched,
-    sorted, and filtered
+    A complete list of all preprints regardless of status — under review,
+    published, and declined — for full transparency.
     """
 
-    template_name = 'journal/article_list.html'
+    model = submission_models.Article
+    template_name = 'isolinear/full_preprint_list.html'
 
     def get_queryset(self, params_querydict=None):
-
-        self.queryset = super().get_queryset(params_querydict)
-        return self.queryset.filter(
-            preprint__date_published__lte=timezone.now(),
-            date_published__isnull=True,
-            date_declined__isnull=True,
-        )
+        queryset = super().get_queryset(params_querydict)
+        return queryset.filter(
+            preprint__isnull=False,
+        ).select_related('preprint').order_by(self.get_order_by())
 
     def get_facets(self):
-
-        facets = {
-            'preprint__date_published__date__gte': {
-                'type': 'date',
-                'field_label': _('Published after'),
-            },
-            'preprint__date_published__date__lte': {
-                'type': 'date',
-                'field_label': _('Published before'),
+        return {
+            'q': {
+                'type': 'search',
+                'field_label': _('Search'),
             },
         }
-        return self.filter_facets_if_journal(facets)
 
     def get_order_by_choices(self):
         return [
             ('-preprint__date_published', _('Newest')),
             ('preprint__date_published', _('Oldest')),
-            ('title', _('Titles A-Z')),
-            ('-title', _('Titles Z-A')),
-            ('correspondence_author__last_name', _('Author Name')),
+            ('title', _('Title A–Z')),
+            ('-title', _('Title Z–A')),
         ]
-
-    def order_queryset(self, queryset):
-        order_by = self.get_order_by()
-        if order_by:
-            return queryset.order_by('pinnedarticle__sequence', order_by)
-        else:
-            return queryset.order_by('pinnedarticle__sequence')
 
     def get_order_by(self):
         order_by = self.request.GET.get('order_by', '-preprint__date_published')
-        order_by_choices = self.get_order_by_choices()
-        return order_by if order_by in dict(order_by_choices) else ''
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['search_form'] = journal_forms.SearchForm()
-        context['preprints'] = True
-        return context
+        return order_by if order_by in dict(self.get_order_by_choices()) else '-preprint__date_published'
 
 
 def preprint_version(request, article_id, version_number):
@@ -326,11 +302,24 @@ def preprint_version(request, article_id, version_number):
         setting_name='isolinear_repository_code',
         journal=request.journal,
     ).value
+
+    public_editorial_log = setting_handler.get_setting(
+        'general',
+        'public_editorial_log',
+        request.journal,
+    ).processed_value
+
+    editorial_log = None
+    if public_editorial_log:
+        from journal import logic as journal_logic
+        editorial_log = journal_logic.build_editorial_timeline(article)
+
     template = 'journal/preprint_version.html'
     context = {
         'article': article,
         'preprint_version': preprint_version,
         'repository_code': repository_code,
+        'editorial_log': editorial_log,
     }
     return render(
         request,
