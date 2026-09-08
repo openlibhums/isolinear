@@ -1,0 +1,215 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load hooks %}
+{% load i18n %}
+{% load dates %}
+
+{% block page_title %}{% if article.preprint %}{% trans "Preprint" %} {% endif %}{% trans "Article" %}{% endblock %}
+
+{% block title %}{{ article.frozen_authors.0.last_name|striptags }} | {% if preprint_version.title %}{{ preprint_version.title|striptags }}{% else %}{{ article.title|striptags }}{% endif %} | {{ journal_settings.general.journal_name|striptags }}{% endblock %}
+
+{% block head %}
+    {% include "elements/article_meta_tags.html" %}
+{% endblock %}
+
+{% block reading_options_bar %}
+    {% include "common/elements/journal/reading_options_bar.html" %}
+{% endblock reading_options_bar %}
+
+{% block body %}
+    <div id="article_opener" class="row">
+        {% if not journal_settings.article.disable_article_large_image %}
+          <div class="col-md-12">
+            <div class="card">
+              <div class="clarity-banner">
+                <img class="clarity-banner-image"
+                  src="{{ article.best_large_image_url }}"
+                  alt="{{ article.best_large_image_alt_text }}">
+              </div>
+              <div class="article-header card-text">
+                <div class="text-uppercase">{{ article.section.name }}</div>
+                <h1 class="card-title align-text-bottom article-title">{% if preprint_version.title %}{{ preprint_version.title|safe }}{% else %}{{ article.title|safe }}{% endif %}</h1>
+                {% include "elements/journal/article_authors_compact.html" with limit=10 %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+    </div>
+
+    <div id="article_metadata" class="row">
+
+        <div class="col-md-7">
+            <div id="article" class="text-format-region">
+                {% if journal_settings.article.disable_article_large_image %}
+                    <small>{{ article.section.name }}</small>
+                    <h1>{% if preprint_version.title %}{{ preprint_version.title|safe }}{% else %}{{ article.title|safe }}{% endif %}</h1>
+                {% endif %}
+
+                <div class="alert alert-secondary" role="status">
+                    {% if article.is_published %}
+                        {% blocktrans with version=preprint_version.version %}This is version {{ version }} of this article. The published version can be found at:{% endblocktrans %}
+                        {% if article.get_doi %}
+                            <a href="{{ article.get_doi_url }}">{{ article.get_doi_url }}</a>
+                        {% else %}
+                            <a href="{% url 'article_view' 'id' article.pk %}">{% site_url 'article_view' 'id' article.pk %}</a>
+                        {% endif %}
+                    {% elif preprint_version == article.preprint.current_version %}
+                        {% blocktrans with version=preprint_version.version %}This is version {{ version }} of this article. It is the latest version of this preprint.{% endblocktrans %}
+                    {% else %}
+                        {% blocktrans with version=preprint_version.version %}This is version {{ version }} of this article. A newer version is available at:{% endblocktrans %}
+                        {% if preprint_version.get_doi %}
+                            <a href="https://doi.org/{{ preprint_version.preprint.current_version.get_doi }}">https://doi.org/{{ preprint_version.preprint.current_version.get_doi }}</a>
+                        {% else %}
+                            <a href="{% site_url 'isolinear_preprint_version' article.pk preprint_version.preprint.current_version.version %}">{% site_url 'isolinear_preprint_version' article.pk preprint_version.preprint.current_version.version %}</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                {% if journal_settings.general.uses_isolinear_plugin and not article.is_published %}
+                    <p>
+                        <strong>
+                            {% if article.date_accepted %}
+                                {% trans "This article is an accepted preprint. Production is underway." %}
+                            {% elif article.date_declined %}
+                                {% trans "This article is a preprint that has been withdrawn from submission." %}
+                            {% elif article.stage == 'Under Revision' %}
+                                {% trans "This article is a preprint currently under revision." %}
+                            {% else %}
+                                {% trans "This article is a preprint and is currently undergoing peer review." %}
+                            {% endif %}
+                        </strong>
+                    </p>
+                {% endif %}
+
+                {% if article.abstract and article.abstract != '' %}
+                    <h2>{% trans "Abstract" %}</h2>
+                    {% if journal_settings.general.uses_isolinear_plugin and not article.is_published %}
+                        <p>{{ article.abstract|safe }}</p>
+                    {% else %}
+                        <p>{{ article.abstract_display|safe }}</p>
+                    {% endif %}
+                {% endif %}
+
+                {% if journal_settings.general.keyword_list_page %}
+                    {% include "elements/journal/article_keywords.html" with keywords=article.keywords linked="True" %}
+                {% else %}
+                    {% include "elements/journal/article_keywords.html" with keywords=article.keywords %}
+                {% endif %}
+
+                {% if article.rights %}
+                    <h2>{% trans "Rights" %}</h2>
+                    <p>{{ article.rights|safe }}</p>
+                {% endif %}
+
+                {% include "elements/funder_info_for_readers.html" %}
+
+                {% hook 'article_content' %}
+            </div>
+        </div>
+
+        <div class="col-md-4 offset-md-1 left-bar">
+            <div class="card">
+                <div class="card-body">
+                    <section aria-label="{% trans 'Article Information' %}">
+                        <div class="article-menu">
+                            {% include "common/elements/altmetric_badges.html" with article=article %}
+                            {% if journal_settings.article.disable_article_large_image %}
+                                <h2>
+                                    {% blocktrans count counter=article.frozen_authors.count %}
+                                        Author
+                                    {% plural %}
+                                        Authors
+                                    {% endblocktrans %}
+                                </h2>
+                                {% include "common/elements/journal/article_authors_ul.html" %}
+                            {% endif %}
+
+                            <h2>{% trans "Author details" %}</h2>
+                            {% include "common/elements/journal/article_authors_full.html" %}
+
+                            <h2>{% trans "Download" %}</h2>
+                            <ul>
+                                <li>
+                                    <a href="{{ article.preprint.repository.site_url }}/repository/object/{{ article.preprint.pk }}/download/{{ preprint_version.file.pk }}/">
+                                        {% trans "Download PDF" %}
+                                        {% include "elements/icons/link_download.html" %}
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <h2>{% trans "Versions" %}</h2>
+                            {% hook 'preprint_version_downloads' %}
+
+                            <h2>{% trans "Information" %}</h2>
+                            <ul>
+                                {% if journal_settings.article.display_date_submitted and article.date_submitted %}
+                                    <li>{% trans "Submitted on" %} {{ article.date_submitted|date_human }}</li>
+                                {% endif %}
+                                {% if journal_settings.article.display_date_accepted and article.date_accepted %}
+                                    <li>{% trans "Accepted on" %} {{ article.date_accepted|date_human }}</li>
+                                {% endif %}
+                                {% if article.is_published %}
+                                    <li id="article_date_published">
+                                        {% trans "Published on" %} {{ article.date_published|date_human }}
+                                    </li>
+                                {% endif %}
+                                {% if journal_settings.general.uses_isolinear_plugin and not article.is_published %}
+                                    <li>{% trans "Preprint Under Review" %}</li>
+                                {% elif article.peer_reviewed %}
+                                    <li>{% trans "Peer Reviewed" %}
+                                        <i aria-hidden="true" class="fa fa-check-circle"></i>
+                                    </li>
+                                {% endif %}
+                                {% if article.license %}
+                                    <li>{% trans "Licence" %}
+                                        <a href="{{ article.license.url }}" data-toggle="tooltip" data-html="true"
+                                           title="{{ article.license.text|safe }}" target="_blank">
+                                            {{ article.license.name }}
+                                            {% include "elements/icons/link_external.html" %}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+
+                            {% if article.competing_interests %}
+                                <h2>{% trans "Competing Interests" %}</h2>
+                                <ul>
+                                    <li>{{ article.competing_interests|safe }}</li>
+                                </ul>
+                            {% endif %}
+
+                            {% for field in article.custom_fields %}
+                                <h2>{% trans field.field.name %}</h2>
+                                <p>{{ field.answer|safe }}</p>
+                            {% endfor %}
+
+                            {% if article.public_reviews.count > 0 %}
+                                <h2>{% trans "Open Peer Reviews" %}</h2>
+                                <ul>
+                                    {% for review in article.public_reviews %}
+                                        <li>
+                                            <a href="#" data-toggle="modal" data-target="#reviewmodal-{{ review.pk }}">
+                                                {% trans 'Review by' %} {{ review.reviewer.full_name }}
+                                                {% include "elements/icons/link_modal.html" %}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        {% hook 'article_sidebar' %}
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include "elements/public_reviews.html" %}
+
+{% endblock body %}
+
+{% block js %}
+    <script type='text/javascript' src='https://d1bxh8uas1mnw7.cloudfront.net/assets/embed.js'></script>
+    {% hook 'article_js_block' %}
+    <script src="{% static "clarity/js/tooltip-init.js" %}"></script>
+{% endblock js %}
