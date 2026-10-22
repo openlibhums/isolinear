@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
@@ -87,6 +89,7 @@ class Command(BaseCommand):
                 raise CommandError('No licence with that ID in this journal.')
 
         form, element = self.get_review_form(journal)
+        self.date_due = self.get_date_due(journal)
 
         preprints = repo_models.Preprint.objects.filter(
             repository=repository,
@@ -130,6 +133,16 @@ class Command(BaseCommand):
         if not element:
             raise CommandError('The default review form has no text area.')
         return form, element
+
+    def get_date_due(self, journal):
+        days = setting_handler.get_setting(
+            'general',
+            'default_review_days',
+            journal,
+        ).value
+        if not days:
+            raise CommandError('This journal has no default review days.')
+        return (timezone.now() + timedelta(days=int(days))).date()
 
     def process_preprint(
         self, preprint, journal, section, fallback_licence, form, element,
@@ -257,10 +270,6 @@ class Command(BaseCommand):
             article=article,
             round_number=1,
         )
-        due = review.date_due
-        if not due:
-            due = (review.date_assigned or timezone.now()).date()
-
         assignment = review_models.ReviewAssignment(
             article=article,
             reviewer=review.reviewer,
@@ -268,7 +277,7 @@ class Command(BaseCommand):
             review_round=review_round,
             form=form,
             access_code=access_code,
-            date_due=due,
+            date_due=self.date_due,
             visibility=VO.SINGLE_ANON.value if review.anonymous else VO.OPEN.value,
             comments_for_editor=review.status_reason,
         )
