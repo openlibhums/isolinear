@@ -298,7 +298,7 @@ class Command(BaseCommand):
             visibility=VO.OPEN.value,
             comments_for_editor=review.status_reason,
             permission_to_make_public=not review.anonymous,
-            display_public=True,
+            display_public=review.status == 'complete',
         )
 
         if review.status == 'accepted':

@@ -378,7 +378,7 @@
                                                     {% if review.display_public %}
                                                         <li><a href="#"
                                                                data-open="reviewmodal-{{ review.pk }}">Review
-                                                            by {{ review.reviewer.full_name }}</a>
+                                                            by {% if review.permission_to_make_public %}{{ review.reviewer.full_name }}{% else %}{% trans "Anonymous reviewer" %}{% endif %}</a>
                                                         </li>
                                                     {% endif %}
                                                 {% endfor %}

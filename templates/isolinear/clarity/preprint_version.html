@@ -190,7 +190,7 @@
                                     {% for review in article.public_reviews %}
                                         <li>
                                             <a href="#" data-toggle="modal" data-target="#reviewmodal-{{ review.pk }}">
-                                                {% trans 'Review by' %} {{ review.reviewer.full_name }}
+                                                {% trans 'Review by' %} {% if review.permission_to_make_public %}{{ review.reviewer.full_name }}{% else %}{% trans "Anonymous reviewer" %}{% endif %}
                                                 {% include "elements/icons/link_modal.html" %}
                                             </a>
                                         </li>
