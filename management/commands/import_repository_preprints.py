@@ -100,6 +100,7 @@ class Command(BaseCommand):
         # A dry run must not reach create_article, which copies files to disk.
         self.commit = options['commit']
         with transaction.atomic():
+            self.enable_open_peer_review(journal)
             for preprint in preprints:
                 self.process_preprint(
                     preprint,
@@ -133,6 +134,20 @@ class Command(BaseCommand):
         if not element:
             raise CommandError('The default review form has no text area.')
         return form, element
+
+    def enable_open_peer_review(self, journal):
+        if journal.get_setting('general', 'open_peer_review'):
+            self.stdout.write('Open peer review is already enabled.')
+        elif self.commit:
+            setting_handler.save_setting(
+                'general',
+                'open_peer_review',
+                journal,
+                True,
+            )
+            self.stdout.write('Enabled open peer review.')
+        else:
+            self.stdout.write('Would enable open peer review.')
 
     def get_date_due(self, journal):
         days = setting_handler.get_setting(
@@ -181,10 +196,11 @@ class Command(BaseCommand):
                 )
                 for review in preprint.review_set.all().order_by('pk'):
                     self.stdout.write(
-                        '    review {} ({}, {}): would import.'.format(
+                        '    review {} ({}, {}): would import{}.'.format(
                             review.pk,
                             review.status,
                             review.reviewer,
+                            self.anonymous_note(review),
                         )
                     )
                 return
@@ -256,12 +272,13 @@ class Command(BaseCommand):
 
         if not self.commit:
             self.stdout.write(
-                '    review {} ({}, {}): would import{}.'.format(
+                '    review {} ({}, {}): would import{}{}.'.format(
                     review.pk,
                     review.status,
                     review.reviewer,
                     ', decision {}'.format(self.decision_for(review))
                     if review.status == 'complete' else '',
+                    self.anonymous_note(review),
                 )
             )
             return
@@ -278,8 +295,10 @@ class Command(BaseCommand):
             form=form,
             access_code=access_code,
             date_due=self.date_due,
-            visibility=VO.SINGLE_ANON.value if review.anonymous else VO.OPEN.value,
+            visibility=VO.OPEN.value,
             comments_for_editor=review.status_reason,
+            permission_to_make_public=not review.anonymous,
+            display_public=True,
         )
 
         if review.status == 'accepted':
@@ -297,10 +316,6 @@ class Command(BaseCommand):
             assignment.is_complete = True
             assignment.decision = self.decision_for(review)
 
-        if review.comment and review.comment.is_public:
-            assignment.permission_to_make_public = True
-            assignment.display_public = True
-
         assignment.save()
 
         if review.date_assigned:
@@ -313,20 +328,26 @@ class Command(BaseCommand):
                 assignment=assignment,
                 original_element=element,
                 answer=review.comment.body,
-                author_can_see=element.default_visibility,
+                author_can_see=True,
             )
             element.snapshot(answer)
 
         self.stdout.write(
-            '    review {} ({}, {}): imported as assignment {}{}.'.format(
+            '    review {} ({}, {}): imported as assignment {}{}{}.'.format(
                 review.pk,
                 review.status,
                 review.reviewer,
                 assignment.pk,
                 ', decision {}'.format(assignment.decision)
                 if assignment.decision else '',
+                self.anonymous_note(review),
             )
         )
+
+    def anonymous_note(self, review):
+        if review.anonymous:
+            return ' (anonymous: no permission to make public)'
+        return ''
 
     def decision_for(self, review):
         if not review.recommendation:
