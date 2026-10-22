@@ -43,5 +43,20 @@
     "value": {
       "default": "<h1>{{ repository.name }} {{ repository.object_name }}</h1>\n<p>Article Title: {{ article.title }}</p>\n<p>Authors: {% for author in authors %}{{ author.full_name }}{% if not forloop.last %}, {% endfor %}</p>\n<p>Contact Email: {{ article.correspondence_author.email }}</p>\n<p>License: {{ article.license.text }}</p>\n<p>Preprint Statement: This article is a preprint and has not been peer-reviewed.</p>\n<p>DOI: https://doi.org/{{ article.preprint.current_version.get_doi_pattern }}</p>\n<p>Preprint first posted online: {{ article.preprint.date_published }}</p>\n<p>Keywords: {% for keyword in article.preprint.keywords.all %}{{ keyword.word }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>"
     }
+  },
+  {
+    "group": {
+      "name": "plugin:isolinear"
+    },
+    "setting": {
+      "description": "Add the cover sheet to the front of preprint PDFs. Turn this off if manuscripts already include their own cover page.",
+      "is_translatable": false,
+      "name": "isolinear_add_cover_sheet",
+      "pretty_name": "Add Cover Sheet",
+      "type": "boolean"
+    },
+    "value": {
+      "default": "on"
+    }
   }
 ]

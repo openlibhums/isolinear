@@ -11,8 +11,25 @@ from core import files
 
 
 def get_pdf_path(journal, article, file):
-    # generate a cover sheet using the cover sheet xml setting.
+    file_path = file.get_file_path(article)
+    if file.original_filename.lower().endswith('.zip'):
+        article_pdf_path = convert.generate_pdf_from_latex_zip(file_path)
+    elif files.file_path_mime(file_path) != 'application/pdf':
+        article_pdf_path = convert.generate_pdf_from_doc(file)
+    else:
+        article_pdf_path = file_path
+
     plugin = plugin_settings.IsolinearPlugin.get_self()
+    add_cover_sheet = setting_handler.get_plugin_setting(
+        plugin,
+        'isolinear_add_cover_sheet',
+        journal,
+    )
+    # Default to adding a cover sheet until the setting has been installed.
+    if add_cover_sheet and not add_cover_sheet.processed_value:
+        return article_pdf_path
+
+    # generate a cover sheet using the cover sheet xml setting.
     isolinear_cover_sheet = setting_handler.get_plugin_setting(
         plugin,
         'isolinear_cover_sheet',
@@ -36,17 +53,6 @@ def get_pdf_path(journal, article, file):
         isolinear_cover_sheet,
         context,
     )
-
-    # check if the supplied file is a PDF, if it is, we only need to splice.
-    file_mime = files.file_path_mime(
-        file.get_file_path(article)
-    )
-    if not file_mime == 'application/pdf':
-        article_pdf_path = convert.generate_pdf_from_doc(
-            file,
-        )
-    else:
-        article_pdf_path = file.get_file_path(article)
 
     # splice the two files together and return the saved path
     spliced_file_path = convert.splice_pdf_files_together(

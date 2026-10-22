@@ -2,11 +2,12 @@ from django.http import FileResponse, Http404
 from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.template.loader import select_template
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from plugins.isolinear import iso_utils, plugin_settings, forms
+from plugins.isolinear import convert, iso_utils, plugin_settings, forms
 from submission import models as submission_models
 from repository import models as repository_models
 from utils import setting_handler
@@ -14,6 +15,9 @@ from core import forms as core_forms, models as core_models
 from core.views import GenericFacetedListView
 from security.decorators import has_journal, any_editor_user_required
 from journal import forms as journal_forms
+
+
+CONVERSION_ERRORS = (convert.PandocError, convert.LatexError)
 
 
 @has_journal
@@ -43,6 +47,14 @@ def manager(request):
             'object': setting_handler.get_setting(
                 'plugin:isolinear',
                 'isolinear_repository_code',
+                request.journal,
+            ),
+        },
+        {
+            'name': 'isolinear_add_cover_sheet',
+            'object': setting_handler.get_setting(
+                'plugin:isolinear',
+                'isolinear_add_cover_sheet',
                 request.journal,
             ),
         },
@@ -120,16 +132,25 @@ def publish_preprint(request, article_id):
             pk=request.POST.get('file'),
             article_id=article.pk,
         )
-        iso_utils.publish_repository_object_from_journal_article(
-            article,
-            repository,
-            file,
-        )
-        messages.add_message(
-            request,
-            messages.SUCCESS,
-            'Preprint published.',
-        )
+        try:
+            with transaction.atomic():
+                iso_utils.publish_repository_object_from_journal_article(
+                    article,
+                    repository,
+                    file,
+                )
+        except CONVERSION_ERRORS as e:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                'Could not build the preprint PDF: {}'.format(e),
+            )
+        else:
+            messages.add_message(
+                request,
+                messages.SUCCESS,
+                'Preprint published.',
+            )
         return redirect(
             reverse(
                 'isolinear_publish_preprint',
@@ -171,15 +192,24 @@ def create_new_version(request, article_id):
         )
         if form.is_valid():
             file = form.cleaned_data.get('file')
-            iso_utils.publish_new_preprint_version(
-                article,
-                file,
-            )
-            messages.add_message(
-                request,
-                messages.SUCCESS,
-                'New version created.',
-            )
+            try:
+                with transaction.atomic():
+                    iso_utils.publish_new_preprint_version(
+                        article,
+                        file,
+                    )
+            except CONVERSION_ERRORS as e:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    'Could not build the preprint PDF: {}'.format(e),
+                )
+            else:
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    'New version created.',
+                )
             return redirect(
                 reverse(
                     'isolinear_create_new_version',
@@ -224,16 +254,25 @@ def rebuild_version_pdf(request, article_id, version_id):
         )
         if form.is_valid():
             file = form.cleaned_data.get('file')
-            iso_utils.recreate_version_file(
-                article,
-                version,
-                file,
-            )
-            messages.add_message(
-                request,
-                messages.SUCCESS,
-                'New file created',
-            )
+            try:
+                with transaction.atomic():
+                    iso_utils.recreate_version_file(
+                        article,
+                        version,
+                        file,
+                    )
+            except CONVERSION_ERRORS as e:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    'Could not build the preprint PDF: {}'.format(e),
+                )
+            else:
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    'New file created',
+                )
             return redirect(
                 reverse(
                     'isolinear_rebuild_version_pdf',
