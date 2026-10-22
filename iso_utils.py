@@ -1,6 +1,11 @@
 import os.path
+import re
+import shutil
+import tempfile
+import time
 from uuid import uuid4
 
+from django.conf import settings
 from django.utils import timezone
 from django.core.files.base import ContentFile
 
@@ -8,6 +13,68 @@ from repository import models as repo_models
 from utils import setting_handler
 from plugins.isolinear import convert, plugin_settings
 from core import files
+
+
+CONVERSIONS_DIR = os.path.join(
+    settings.BASE_DIR,
+    'files',
+    'temp',
+    'isolinear-conversions',
+)
+CONVERSION_MAX_AGE = 24 * 60 * 60
+CONVERSION_TOKEN = re.compile(r'^[0-9a-f]{32}$')
+
+
+def convert_uploaded_file(upload):
+    """
+    Converts an uploaded file to PDF without attaching it to an article or
+    preprint, and returns a token for the result. Results older than a day
+    are removed.
+    """
+    os.makedirs(CONVERSIONS_DIR, exist_ok=True)
+    remove_old_conversions()
+
+    _, extension = os.path.splitext(upload.name.lower())
+    work_dir = tempfile.mkdtemp(prefix='upload-', dir=CONVERSIONS_DIR)
+    try:
+        source_path = os.path.join(work_dir, 'upload' + extension)
+        with open(source_path, 'wb') as source:
+            for chunk in upload.chunks():
+                source.write(chunk)
+
+        if extension == '.zip':
+            pdf_path = convert.generate_pdf_from_latex_zip(source_path)
+        elif extension == '.pdf':
+            pdf_path = source_path
+        else:
+            pdf_path = convert.generate_pdf_from_doc_path(source_path, work_dir)
+
+        token = uuid4().hex
+        shutil.move(pdf_path, conversion_path(token))
+        return token
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+
+
+def conversion_path(token):
+    if not CONVERSION_TOKEN.match(token):
+        raise ValueError('Invalid conversion token.')
+    return os.path.join(CONVERSIONS_DIR, '{}.pdf'.format(token))
+
+
+def remove_old_conversions():
+    cutoff = time.time() - CONVERSION_MAX_AGE
+    for name in os.listdir(CONVERSIONS_DIR):
+        path = os.path.join(CONVERSIONS_DIR, name)
+        try:
+            if os.path.getmtime(path) >= cutoff:
+                continue
+            if os.path.isdir(path):
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                os.unlink(path)
+        except OSError:
+            pass
 
 
 def get_pdf_path(journal, article, file):

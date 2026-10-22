@@ -1,3 +1,5 @@
+import os
+
 from django.http import FileResponse, Http404
 from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.template.loader import select_template
@@ -456,3 +458,86 @@ def serve_preprint_pdf_file(request, article_id, version_number):
         content_type='application/pdf',
     )
 
+
+@has_journal
+@any_editor_user_required
+def test_conversion(request):
+    """
+    Lets an editor upload a file and convert it with the preprint converter,
+    without attaching it to an article or preprint.
+    """
+    form = forms.ConversionUploadForm()
+    conversion_error = None
+    if request.POST:
+        form = forms.ConversionUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                token = iso_utils.convert_uploaded_file(
+                    form.cleaned_data['file'],
+                )
+            except CONVERSION_ERRORS as e:
+                conversion_error = str(e)
+            else:
+                return redirect(
+                    reverse(
+                        'isolinear_test_conversion_result',
+                        kwargs={'token': token},
+                    )
+                )
+    template = 'isolinear/test_conversion.html'
+    context = {
+        'form': form,
+        'conversion_error': conversion_error,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+def _get_conversion_path(token):
+    path = iso_utils.conversion_path(token)
+    if not os.path.exists(path):
+        raise Http404
+    return path
+
+
+@has_journal
+@any_editor_user_required
+def test_conversion_result(request, token):
+    _get_conversion_path(token)
+    template = 'isolinear/test_conversion_result.html'
+    context = {
+        'token': token,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@has_journal
+@any_editor_user_required
+def test_conversion_viewer(request, token):
+    _get_conversion_path(token)
+    pdf_url = reverse(
+        'isolinear_test_conversion_pdf',
+        kwargs={'token': token},
+    )
+    return render(
+        request,
+        'isolinear/pdf_viewer.html',
+        {'pdf_url': pdf_url},
+    )
+
+
+@has_journal
+@any_editor_user_required
+def test_conversion_pdf(request, token):
+    return FileResponse(
+        open(_get_conversion_path(token), 'rb'),
+        content_type='application/pdf',
+        filename='conversion.pdf',
+    )

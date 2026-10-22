@@ -1,0 +1,41 @@
+{% extends "admin/core/base.html" %}
+{% load foundation static %}
+
+{% block css %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/isolinear.css' %}">{% endblock %}
+
+{% block page_title %}Test Conversion{% endblock %}
+{% block title %}Test Conversion{% endblock %}
+{% block title-section %}Test Conversion{% endblock %}
+{% block title-sub %}Convert a file to PDF without attaching it to an article or preprint{% endblock %}
+
+{% block breadcrumbs %}
+    {{ block.super }}
+    <li><a href="{% url 'isolinear_manager' %}">Isolinear</a></li>
+    <li>Test Conversion</li>
+{% endblock breadcrumbs %}
+
+{% block body %}
+<div class="row expanded">
+  <div class="large-8 columns">
+    <div class="box">
+      <div class="title-area"><h2>Upload a File</h2></div>
+      <div class="content">
+        <p>The file is converted with the same converter used for preprints: zipped LaTeX projects are built with LuaLaTeX, and DOCX, DOC, ODT and RTF files are converted with Pandoc. No cover sheet is added. Results are kept for a day.</p>
+        {% if conversion_error %}
+          <div class="callout alert">
+            <p><strong>The conversion failed.</strong></p>
+            <pre>{{ conversion_error }}</pre>
+          </div>
+        {% endif %}
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form|foundation }}
+          <button class="button success" type="submit">
+            <span class="fa fa-file-pdf-o"></span> Convert
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

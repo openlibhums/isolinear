@@ -49,4 +49,24 @@ urlpatterns = [
         views.serve_preprint_pdf_file,
         name='isolinear_preprint_pdf_file',
     ),
+    re_path(
+        r'^convert/$',
+        views.test_conversion,
+        name='isolinear_test_conversion',
+    ),
+    re_path(
+        r'^convert/(?P<token>[0-9a-f]{32})/$',
+        views.test_conversion_result,
+        name='isolinear_test_conversion_result',
+    ),
+    re_path(
+        r'^convert/(?P<token>[0-9a-f]{32})/viewer/$',
+        views.test_conversion_viewer,
+        name='isolinear_test_conversion_viewer',
+    ),
+    re_path(
+        r'^convert/(?P<token>[0-9a-f]{32})/pdf/$',
+        views.test_conversion_pdf,
+        name='isolinear_test_conversion_pdf',
+    ),
 ]

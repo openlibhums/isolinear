@@ -83,21 +83,22 @@ def generate_pdf_cover_sheet(cover_sheet_content, context):
 
 
 def generate_pdf_from_doc(file):
+    out_dir = os.path.join(
+        settings.BASE_DIR,
+        'files',
+        'articles',
+        str(file.article_id),
+    )
+    return generate_pdf_from_doc_path(file.self_article_path(), out_dir)
 
-    file_path = file.self_article_path()
 
+def generate_pdf_from_doc_path(file_path, out_dir):
     _, extension = os.path.splitext(file_path)
     if extension not in ['.docx', '.doc', '.rtf', '.odt']:
         raise PandocError("File Extension {} not supported".format(extension))
 
     out_filename = f"{uuid.uuid4()}.pdf"
-    out_path = os.path.join(
-        settings.BASE_DIR,
-        'files',
-        'articles',
-        str(file.article_id),
-        out_filename,
-    )
+    out_path = os.path.join(out_dir, out_filename)
 
     pandoc_command = (
         PANDOC_CMD
