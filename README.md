@@ -16,11 +16,11 @@ Will require pandoc, pypdf and xetex
 sudo apt-get install texlive-xetex
 ## Janeway 1.8
 
-This branch runs on Janeway 1.8.2. Janeway 1.8.2 doesn't have the hooks and settings isolinear needs, so apply `janeway-1.8.2.patch` to the Janeway checkout first:
+This branch runs on Janeway 1.8.2. Janeway 1.8.2 doesn't have the hooks and settings isolinear needs, so the Janeway checkout needs a patch that backports them from 1.9. The patch isn't kept in this repository. Apply it, then load the new setting:
 
 ```
 cd /path/to/janeway
-git apply src/plugins/isolinear/janeway-1.8.2.patch
+git apply /path/to/isolinear-1.8.2.patch
 python src/manage.py load_default_settings
 ```
 
