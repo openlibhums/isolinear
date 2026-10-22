@@ -1,5 +1,6 @@
 from django.http import FileResponse, Http404
 from django.shortcuts import render, reverse, redirect, get_object_or_404
+from django.template.loader import select_template
 from django.contrib import messages
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -260,6 +261,17 @@ class PreprintArticlesListView(GenericFacetedListView):
     model = submission_models.Article
     template_name = 'isolinear/full_preprint_list.html'
 
+    def get_template_names(self):
+        theme = setting_handler.get_setting(
+            'general',
+            'journal_theme',
+            self.request.journal,
+        ).value
+        return [
+            'isolinear/{}/full_preprint_list.html'.format(theme),
+            self.template_name,
+        ]
+
     def get_queryset(self, params_querydict=None):
         queryset = super().get_queryset(params_querydict)
         return queryset.filter(
@@ -316,7 +328,15 @@ def preprint_version(request, article_id, version_number):
         from journal import logic as journal_logic
         editorial_log = journal_logic.build_editorial_timeline(article)
 
-    template = 'journal/preprint_version.html'
+    theme = setting_handler.get_setting(
+        'general',
+        'journal_theme',
+        request.journal,
+    ).value
+    template = select_template([
+        'isolinear/{}/preprint_version.html'.format(theme),
+        'journal/preprint_version.html',
+    ]).template.name
     context = {
         'article': article,
         'preprint_version': preprint_version,

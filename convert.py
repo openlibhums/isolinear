@@ -13,6 +13,8 @@ logger = get_logger(__name__)
 MEMORY_LIMIT_ARG = ['+RTS', '-M256M', '-RTS']
 PANDOC_CMD = ['pandoc']
 LATEX = ['--pdf-engine=xelatex']
+GEOMETRY = ['-V', 'geometry:margin=1in']
+COVER_SHEET_STYLE = ['-V', 'mainfont=Arial', '-V', 'pagestyle=empty']
 
 
 def generate_pdf_cover_sheet(cover_sheet_content, context):
@@ -43,6 +45,8 @@ def generate_pdf_cover_sheet(cover_sheet_content, context):
         PANDOC_CMD
         + MEMORY_LIMIT_ARG
         + LATEX
+        + GEOMETRY
+        + COVER_SHEET_STYLE
         + ['-s', cover_sheet_html_path, '-t', 'pdf', '-o', cover_sheet_pdf_path, f'--resource-path={media_dir}']
     )
     try:
@@ -81,6 +85,7 @@ def generate_pdf_from_doc(file):
         PANDOC_CMD
         + MEMORY_LIMIT_ARG
         + LATEX
+        + GEOMETRY
         + ['-s', file_path, '-t', 'pdf', '-o', out_path]
     )
 

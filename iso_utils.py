@@ -99,6 +99,14 @@ def publish_repository_object_from_journal_article(article, repository, file):
         file=preprint_file,
     )
 
+    for author in article.frozen_authors():
+        repo_models.PreprintAuthor.objects.get_or_create(
+            preprint=preprint,
+            account=author.author,
+            order=author.order,
+            affiliation=author.affiliation,
+        )
+
     if plugin_settings.MINT_DOIS and article.preprint.repository.crossref_enable:
         from identifiers import preprints
         preprints.deposit_doi_for_preprint_version(
@@ -126,14 +134,6 @@ def publish_repository_object_from_journal_article(article, repository, file):
 
         preprint.submission_file = preprint_file
         preprint.save()
-
-    for author in article.frozen_authors():
-        repo_models.PreprintAuthor.objects.get_or_create(
-            preprint=preprint,
-            account=author.author,
-            order=author.order,
-            affiliation=author.affiliation
-        )
 
 
 def recreate_version_file(article, version, file):
@@ -206,4 +206,3 @@ def publish_new_preprint_version(article, file):
     # Update the version with the final file
     version.file = preprint_file
     version.save()
-
