@@ -1,0 +1,88 @@
+/* ============================================================
+   Isolinear plugin styles
+   ============================================================ */
+
+/* ── Article metadata table ── */
+.iso-meta-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.iso-meta-table th {
+  width: 35%;
+  padding: .55rem .75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: .8rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+  white-space: nowrap;
+}
+.iso-meta-table td {
+  padding: .55rem .75rem;
+  border-bottom: 1px solid #f0f0f0;
+  line-height: 1.5;
+  color: #222;
+}
+
+/* ── Versions table ── */
+.iso-versions-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.iso-versions-table thead th {
+  padding: .5rem .75rem;
+  text-align: left;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #888;
+  border-bottom: 2px solid #e8e8e8;
+}
+.iso-versions-table tbody tr { border-bottom: 1px solid #f4f4f4; }
+.iso-versions-table tbody tr:last-child { border-bottom: none; }
+.iso-versions-table tbody td { padding: .65rem .75rem; vertical-align: middle; }
+.iso-versions-table .is-current { font-weight: 700; }
+.iso-versions-table .current-chip {
+  display: inline-block;
+  padding: .1rem .45rem;
+  border-radius: 20px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  background: #e3f0ff;
+  color: #1a6bbf;
+  margin-left: .35rem;
+  vertical-align: middle;
+}
+
+/* ── Action button group ── */
+.iso-action-group { display: flex; flex-direction: column; gap: .5rem; }
+.iso-action-group .button { margin: 0; }
+.iso-action-group form { margin: 0; }
+
+/* ── PDF iframe ── */
+.iso-pdf-frame {
+  width: 100%;
+  min-height: 900px;
+  border: 0;
+  display: block;
+}
+
+/* ── File selection form ── */
+.iso-file-form { margin-bottom: .5rem; }
+
+/* ── Warning/info banners ── */
+.iso-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .875rem 1.1rem;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+  font-size: .875rem;
+  line-height: 1.5;
+}
+.iso-notice .fa { font-size: 1.1rem; flex-shrink: 0; margin-top: .1rem; }
+.iso-notice-warning { background: #fff8e1; border-left: 4px solid #ffa000; color: #555; }
+.iso-notice-warning .fa { color: #ffa000; }
+.iso-notice-info    { background: #e3f2fd; border-left: 4px solid #2196f3; color: #555; }
+.iso-notice-info .fa { color: #2196f3; }

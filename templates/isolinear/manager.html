@@ -1,30 +1,45 @@
 {% extends "admin/core/base.html" %}
-{% load foundation %}
+{% load foundation static %}
 
-{% block page_title %}Isolinear Plugin Admin{% endblock page_title %}
-{% block title %}Isolinear Plugin Admin{% endblock %}
+{% block css %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/isolinear.css' %}">{% endblock %}
+
+{% block page_title %}Isolinear Plugin Settings{% endblock %}
+{% block title %}Isolinear Plugin Settings{% endblock %}
+{% block title-section %}Isolinear Plugin Settings{% endblock %}
+{% block title-sub %}Configure the linked repository and plugin options{% endblock %}
 
 {% block body %}
-    <div class="box">
-        <div class="content">
-            <div class="row expanded">
-                <div class="large-6 columns">
-                    <div class="title-area">
-                        <h2>Isolinear Plugin Settings</h2>
-                    </div>
-                    <p>The Isolinear Plugin has been developed for combined journal/preprint workflow. Below you can set the repository this journal is linked to and enable or disable the plugin.</p>
-                    <form method="POST">
-                        {% csrf_token %}
-                        {{ manager_form|foundation }}
-                        <div class="row expanded">
-                            <div class="large-12 columns">
-                                <button class="button success" type="submit">Save Settings</button>
-                            </div>
-                        </div>
+<div class="row expanded">
 
-                    </form>
-                </div>
-            </div>
-        </div>
+  <div class="large-6 columns">
+    <div class="box">
+      <div class="title-area"><h2>Settings</h2></div>
+      <div class="content">
+        <p>The Isolinear plugin enables a combined journal/preprint workflow. Set the repository this journal is linked to and enable or disable the plugin below.</p>
+        <form method="POST">
+          {% csrf_token %}
+          {{ manager_form|foundation }}
+          <button class="button success" type="submit">
+            <span class="fa fa-save"></span> Save Settings
+          </button>
+        </form>
+      </div>
     </div>
-{% endblock body %}
+  </div>
+
+  <div class="large-6 columns">
+    <div class="box">
+      <div class="title-area"><h2>About Isolinear</h2></div>
+      <div class="content">
+        <p>When enabled, this plugin allows editors to publish article manuscripts as preprints in the linked repository directly from the editorial workflow. Subsequent revisions and peer reviews are incorporated automatically.</p>
+        <ul>
+          <li>Publish a manuscript as a preprint from the editor assignment page</li>
+          <li>Create new preprint versions as revisions are submitted</li>
+          <li>View and manage all preprints from the <a href="{% url 'isolinear_preprint_list' %}">preprint list</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

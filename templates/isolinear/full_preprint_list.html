@@ -1,0 +1,90 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Full Preprint List" %}{% endblock %}
+
+{% block body %}
+<section id="content">
+    <div class="row">
+        <div class="large-8 columns border-right">
+            <aside class="hide-for-large">
+                <ul class="accordion" data-accordion data-allow-all-closed="true">
+                    <li class="accordion-item" data-accordion-item>
+                        <a href="#" class="accordion-title">{% trans "Show Filter Options" %}</a>
+                        <div class="accordion-content" data-tab-content>
+                            {% include "elements/journal/article_list_filters.html" %}
+                        </div>
+                    </li>
+                </ul>
+            </aside>
+
+            <h1>{% trans "Full Preprint List" %}</h1>
+            <p class="lead">{% trans "A complete record of all preprints submitted to this journal, including those currently under review, those that have been accepted and published, and those that have been declined or withdrawn." %}</p>
+
+            {% include "common/elements/sorting.html" with form_id=facet_form.id %}
+
+            {% for article in article_list %}
+            <div class="preprint-list-item card" style="margin-bottom: 1.5rem;">
+                <div class="card-section">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                        <h3 style="margin-bottom: 0.25rem;">
+                            {% if article.preprint.preprintversion_set.first %}
+                                <a href="{% url 'isolinear_preprint_version' article.pk article.preprint.preprintversion_set.first.version %}">{{ article.safe_title }}</a>
+                            {% else %}
+                                {{ article.safe_title }}
+                            {% endif %}
+                        </h3>
+                        {% if article.date_declined or article.stage == 'Rejected' %}
+                            <span class="label label-tl-red">{% trans "Declined" %}</span>
+                        {% elif not article.date_published and article.stage != 'preprint_published' and article.stage != 'Published' %}
+                            <span class="label label-tl-amber">{% trans "Under Review" %}</span>
+                        {% endif %}
+                    </div>
+
+                    <p style="margin: 0.25rem 0 0.5rem;">
+                        {% for author in article.frozen_authors.all %}
+                            {{ author.full_name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+
+                    <p class="meta" style="font-size: 0.875rem; color: #666; margin-bottom: 0.75rem;">
+                        {% if article.preprint.date_published %}
+                            <strong>{% trans "First posted" %}:</strong> {{ article.preprint.date_published|date:"j F Y" }}
+                        {% endif %}
+                        {% if article.date_accepted %}
+                            &nbsp;&middot;&nbsp; <strong>{% trans "Accepted" %}:</strong> {{ article.date_accepted|date:"j F Y" }}
+                        {% endif %}
+                        {% if article.date_published %}
+                            &nbsp;&middot;&nbsp; <strong>{% trans "Published" %}:</strong> {{ article.date_published|date:"j F Y" }}
+                        {% endif %}
+                        {% if article.date_declined %}
+                            &nbsp;&middot;&nbsp; <strong>{% trans "Declined" %}:</strong> {{ article.date_declined|date:"j F Y" }}
+                        {% endif %}
+                    </p>
+
+                    {% with versions=article.preprint.preprintversion_set.all %}
+                    {% if versions %}
+                    <p style="font-size: 0.875rem; margin-bottom: 0;">
+                        <strong>{% trans "Versions" %}:</strong>
+                        {% for version in versions %}
+                            <a href="{% url 'isolinear_preprint_version' article.pk version.version %}">v{{ version.version }}</a>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+            {% empty %}
+                <p><strong>{% trans "No preprints to display." %}</strong></p>
+            {% endfor %}
+
+            {% include "common/elements/pagination.html" with form_id=facet_form.id %}
+        </div>
+
+        <aside class="large-4 columns show-for-large">
+            {% include "elements/journal/article_list_filters.html" %}
+        </aside>
+    </div>
+</section>
+{% endblock body %}

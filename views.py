@@ -1,6 +1,8 @@
+from django.http import FileResponse, Http404
 from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.template.loader import select_template
 from django.contrib import messages
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -9,7 +11,7 @@ from submission import models as submission_models
 from repository import models as repository_models
 from utils import setting_handler
 from core import forms as core_forms, models as core_models
-from core.views import FilteredArticlesListView
+from core.views import GenericFacetedListView
 from security.decorators import has_journal, any_editor_user_required
 from journal import forms as journal_forms
 
@@ -141,6 +143,7 @@ def publish_preprint(request, article_id):
         'article': article,
         'repository': repository,
         'form': form,
+        'mint_dois': plugin_settings.MINT_DOIS,
     }
     return render(
         request,
@@ -250,14 +253,14 @@ def rebuild_version_pdf(request, article_id, version_id):
     )
 
 
-class PreprintArticlesListView(FilteredArticlesListView):
-
+class PreprintArticlesListView(GenericFacetedListView):
     """
-    A list of published articles that can be searched,
-    sorted, and filtered
+    A complete list of all preprints regardless of status — under review,
+    published, and declined — for full transparency.
     """
 
-    template_name = 'journal/article_list.html'
+    model = submission_models.Article
+    template_name = 'isolinear/full_preprint_list.html'
 
     def get_template_names(self):
         theme = setting_handler.get_setting(
@@ -271,54 +274,44 @@ class PreprintArticlesListView(FilteredArticlesListView):
         ]
 
     def get_queryset(self, params_querydict=None):
-
-        self.queryset = super().get_queryset(params_querydict)
-        return self.queryset.filter(
-            preprint__date_published__lte=timezone.now(),
-            date_published__isnull=True,
-            date_declined__isnull=True,
-        )
+        # The core search facet uses the Article admin's search_fields,
+        # which include email addresses, so search public fields here.
+        params = (params_querydict or self.request.GET).copy()
+        search_term = params.pop('q', [''])[0].strip()
+        # Keep params non-empty so the parent doesn't fall back to
+        # request.GET, which still holds the search term.
+        params['order_by'] = self.get_order_by()
+        queryset = super().get_queryset(params)
+        if search_term:
+            queryset = queryset.filter(
+                Q(title__icontains=search_term)
+                | Q(frozenauthor__first_name__icontains=search_term)
+                | Q(frozenauthor__last_name__icontains=search_term)
+                | Q(keywords__word__icontains=search_term)
+            ).distinct()
+        return queryset.filter(
+            preprint__isnull=False,
+        ).select_related('preprint').order_by(self.get_order_by())
 
     def get_facets(self):
-
-        facets = {
-            'preprint__date_published__date__gte': {
-                'type': 'date',
-                'field_label': _('Published after'),
-            },
-            'preprint__date_published__date__lte': {
-                'type': 'date',
-                'field_label': _('Published before'),
+        return {
+            'q': {
+                'type': 'search',
+                'field_label': _('Search'),
             },
         }
-        return self.filter_facets_if_journal(facets)
 
     def get_order_by_choices(self):
         return [
             ('-preprint__date_published', _('Newest')),
             ('preprint__date_published', _('Oldest')),
-            ('title', _('Titles A-Z')),
-            ('-title', _('Titles Z-A')),
-            ('correspondence_author__last_name', _('Author Name')),
+            ('title', _('Title A–Z')),
+            ('-title', _('Title Z–A')),
         ]
-
-    def order_queryset(self, queryset):
-        order_by = self.get_order_by()
-        if order_by:
-            return queryset.order_by('pinnedarticle__sequence', order_by)
-        else:
-            return queryset.order_by('pinnedarticle__sequence')
 
     def get_order_by(self):
         order_by = self.request.GET.get('order_by', '-preprint__date_published')
-        order_by_choices = self.get_order_by_choices()
-        return order_by if order_by in dict(order_by_choices) else ''
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['search_form'] = journal_forms.SearchForm()
-        context['preprints'] = True
-        return context
+        return order_by if order_by in dict(self.get_order_by_choices()) else '-preprint__date_published'
 
 
 def preprint_version(request, article_id, version_number):
@@ -338,6 +331,18 @@ def preprint_version(request, article_id, version_number):
         setting_name='isolinear_repository_code',
         journal=request.journal,
     ).value
+
+    public_editorial_log = setting_handler.get_setting(
+        'general',
+        'public_editorial_log',
+        request.journal,
+    ).processed_value
+
+    editorial_log = None
+    if public_editorial_log:
+        from journal import logic as journal_logic
+        editorial_log = journal_logic.build_editorial_timeline(article)
+
     theme = setting_handler.get_setting(
         'general',
         'journal_theme',
@@ -351,10 +356,63 @@ def preprint_version(request, article_id, version_number):
         'article': article,
         'preprint_version': preprint_version,
         'repository_code': repository_code,
+        'editorial_log': editorial_log,
     }
     return render(
         request,
         template,
         context,
+    )
+
+
+def _get_preprint_version_for_request(request, article_id, version_number):
+    article = get_object_or_404(
+        submission_models.Article,
+        pk=article_id,
+        journal=request.journal,
+        preprint__isnull=False,
+    )
+    return article, get_object_or_404(
+        repository_models.PreprintVersion,
+        preprint=article.preprint,
+        version=version_number,
+    )
+
+
+@has_journal
+def preprint_pdf_viewer(request, article_id, version_number):
+    """Render the pdf.js viewer for a preprint version on the journal host.
+
+    The viewer HTML is same-origin with the embedding page, sidestepping
+    ``X-Frame-Options: SAMEORIGIN`` on cross-domain repository hosts.
+    """
+    article, version = _get_preprint_version_for_request(
+        request, article_id, version_number,
+    )
+    pdf_url = reverse(
+        'isolinear_preprint_pdf_file',
+        kwargs={
+            'article_id': article.pk,
+            'version_number': version.version,
+        },
+    )
+    return render(
+        request,
+        'isolinear/pdf_viewer.html',
+        {'pdf_url': pdf_url},
+    )
+
+
+@has_journal
+def serve_preprint_pdf_file(request, article_id, version_number):
+    """Stream a preprint version's PDF bytes — fetched by the pdf.js viewer."""
+    _, version = _get_preprint_version_for_request(
+        request, article_id, version_number,
+    )
+    if not version.file or not version.file.file:
+        raise Http404
+    return FileResponse(
+        version.file.file.open('rb'),
+        content_type='application/pdf',
     )
 

@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>PDF Proofing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.6.319/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.6.319/pdf_viewer.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="{% static "common/css/pdf.css" %}">
+</head>
+<body>
+    <div id="viewerContainer">
+  <div id="viewer" class="pdfViewer"></div>
+</div>
+
+  <script>
+    'use strict';
+
+    if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
+      alert('Please build the library and components using\n' +
+            '  `gulp generic components`');
+    }
+
+    PDFJS.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.6.319/pdf.worker.min.js';
+
+    var DEFAULT_URL = '{{ pdf_url }}';
+
+    var container = document.getElementById('viewerContainer');
+
+    var pdfViewer = new PDFJS.PDFViewer({
+      container: container,
+    });
+
+    container.addEventListener('pagesinit', function () {
+      pdfViewer.currentScaleValue = 'page-width';
+    });
+
+    PDFJS.getDocument(DEFAULT_URL).then(function (pdfDocument) {
+      pdfViewer.setDocument(pdfDocument);
+    });
+
+  </script>
+</body>
+</html>
