@@ -1,0 +1,16 @@
+{% load i18n %}
+{% if preprint_comments %}
+    <section aria-labelledby="preprint-comments-title">
+        <h2 id="preprint-comments-title">{% trans "Comments" %}</h2>
+        {% for comment in preprint_comments %}
+            <div class="callout card" id="comment-{{ comment.pk }}">
+                <div class="card-body">
+                    <p>
+                        <small>{% trans "Comment" %} #{{ comment.pk }} {{ comment.author.full_name }} @ {{ comment.date_time }}</small>
+                    </p>
+                    <p>{{ comment.body|linebreaksbr }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </section>
+{% endif %}

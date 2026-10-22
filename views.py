@@ -332,6 +332,16 @@ def preprint_version(request, article_id, version_number):
         journal=request.journal,
     ).value
 
+    # Invited review comments are journal reviews now, so only public
+    # reader comments are shown here.
+    preprint_comments = repository_models.Comment.objects.none()
+    if article.preprint.repository.enable_comments:
+        preprint_comments = repository_models.Comment.objects.filter(
+            preprint=article.preprint,
+            is_public=True,
+            review__isnull=True,
+        ).select_related('author')
+
     theme = setting_handler.get_setting(
         'general',
         'journal_theme',
@@ -345,6 +355,7 @@ def preprint_version(request, article_id, version_number):
         'article': article,
         'preprint_version': preprint_version,
         'repository_code': repository_code,
+        'preprint_comments': preprint_comments,
     }
     return render(
         request,
