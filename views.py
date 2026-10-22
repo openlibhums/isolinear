@@ -2,6 +2,7 @@ from django.http import FileResponse, Http404
 from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.template.loader import select_template
 from django.contrib import messages
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -273,7 +274,21 @@ class PreprintArticlesListView(GenericFacetedListView):
         ]
 
     def get_queryset(self, params_querydict=None):
-        queryset = super().get_queryset(params_querydict)
+        # The core search facet uses the Article admin's search_fields,
+        # which include email addresses, so search public fields here.
+        params = (params_querydict or self.request.GET).copy()
+        search_term = params.pop('q', [''])[0].strip()
+        # Keep params non-empty so the parent doesn't fall back to
+        # request.GET, which still holds the search term.
+        params['order_by'] = self.get_order_by()
+        queryset = super().get_queryset(params)
+        if search_term:
+            queryset = queryset.filter(
+                Q(title__icontains=search_term)
+                | Q(frozenauthor__first_name__icontains=search_term)
+                | Q(frozenauthor__last_name__icontains=search_term)
+                | Q(keywords__word__icontains=search_term)
+            ).distinct()
         return queryset.filter(
             preprint__isnull=False,
         ).select_related('preprint').order_by(self.get_order_by())
