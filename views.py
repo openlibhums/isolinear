@@ -201,6 +201,8 @@ def create_new_version(request, article_id):
     )
 
 
+@has_journal
+@any_editor_user_required
 def rebuild_version_pdf(request, article_id, version_id):
     article = get_object_or_404(
         submission_models.Article,
