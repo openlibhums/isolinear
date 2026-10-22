@@ -8,7 +8,7 @@ VERSION = '0.1'
 SHORT_NAME = 'isolinear'
 DISPLAY_NAME = 'Isolinear'
 MANAGER_URL = 'isolinear_index'
-JANEWAY_VERSION = "1.5.0"
+JANEWAY_VERSION = "1.8.2"
 IS_WORKFLOW_PLUGIN = False
 
 # Set to True on installs where ``identifiers.preprints`` is available and
