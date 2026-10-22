@@ -28,8 +28,9 @@ LATEXMK_CMD = [
     '-no-shell-escape',
 ]
 LATEX_TIMEOUT = 300
-# Stops TeX reading or writing files outside the build directory.
-LATEX_ENV = {'openin_any': 'p', 'openout_any': 'p', 'shell_escape': 'f'}
+# Stops TeX writing outside the build directory. Reading uses 'r' because
+# LuaTeX in TeX Live 2019 refuses class files from texmf-dist under 'p'.
+LATEX_ENV = {'openin_any': 'r', 'openout_any': 'p', 'shell_escape': 'f'}
 MAX_ZIP_FILES = 2000
 MAX_ZIP_BYTES = 500 * 1024 * 1024
 DOCUMENTCLASS = re.compile(r'^[^%\n]*\\documentclass', re.MULTILINE)
