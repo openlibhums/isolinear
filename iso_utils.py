@@ -100,12 +100,17 @@ def publish_repository_object_from_journal_article(article, repository, file):
     )
 
     for author in article.frozen_authors():
-        repo_models.PreprintAuthor.objects.get_or_create(
+        preprint_author, created = repo_models.PreprintAuthor.objects.get_or_create(
             preprint=preprint,
             account=author.author,
-            order=author.order,
-            affiliation=author.affiliation,
+            defaults={'order': author.order},
         )
+        if created:
+            for affiliation in author.affiliations:
+                affiliation.pk = None
+                affiliation.frozen_author = None
+                affiliation.preprint_author = preprint_author
+                affiliation.save()
 
     if plugin_settings.MINT_DOIS and article.preprint.repository.crossref_enable:
         from identifiers import preprints

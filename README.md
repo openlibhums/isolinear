@@ -14,3 +14,14 @@ Preprint records are created automatically using the article metadata. Isolinear
 Will require pandoc, pypdf and xetex
 
 sudo apt-get install texlive-xetex
+## Janeway 1.8
+
+This branch runs on Janeway 1.8.2. Janeway 1.8.2 doesn't have the hooks and settings isolinear needs, so apply `janeway-1.8.2.patch` to the Janeway checkout first:
+
+```
+cd /path/to/janeway
+git apply src/plugins/isolinear/janeway-1.8.2.patch
+python src/manage.py load_default_settings
+```
+
+Every template and Python change in the patch has a comment saying it can be removed when upgrading to Janeway 1.9. The new `uses_isolinear_plugin` setting in `journal_defaults.json` can't carry a comment, but it's identical to the one in 1.9.

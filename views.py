@@ -317,17 +317,6 @@ def preprint_version(request, article_id, version_number):
         journal=request.journal,
     ).value
 
-    public_editorial_log = setting_handler.get_setting(
-        'general',
-        'public_editorial_log',
-        request.journal,
-    ).processed_value
-
-    editorial_log = None
-    if public_editorial_log:
-        from journal import logic as journal_logic
-        editorial_log = journal_logic.build_editorial_timeline(article)
-
     theme = setting_handler.get_setting(
         'general',
         'journal_theme',
@@ -341,7 +330,6 @@ def preprint_version(request, article_id, version_number):
         'article': article,
         'preprint_version': preprint_version,
         'repository_code': repository_code,
-        'editorial_log': editorial_log,
     }
     return render(
         request,

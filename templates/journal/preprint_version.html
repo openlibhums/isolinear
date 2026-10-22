@@ -5,7 +5,7 @@
 
 {% block page_title %}{% if article.preprint %}{% trans "Preprint" %} {% endif %}{% trans "Article" %}{% endblock %}
 
-{% block title %}{{ article.frozen_authors.0.last_name | striptags }} |{% if preprint_version.title %} {{ preprint_version.title|striptags }}{% else %}{{ article.title|striptags }}{% endif %} | striptags }} |
+{% block title %}{{ article.frozen_authors.0.last_name | striptags }} |{% if preprint_version.title %} {{ preprint_version.title|striptags }}{% else %}{{ article.title|striptags }}{% endif %} |
     {{ journal_settings.general.journal_name | striptags }} {% endblock %}
 
 {% block head %}
