@@ -66,6 +66,10 @@ def embed_pdf(context):
     request = context.get('request')
     article = context.get('article')
     preprint_version = context.get('preprint_version', None)
+    # A published article's own page shows the article, not its preprint.
+    # Preprint version pages pass preprint_version and keep the embed.
+    if preprint_version is None and article.is_published:
+        return ''
     isolinear_enabled = setting_handler.get_plugin_setting(
         plugin,
         'enable_isolinear',
