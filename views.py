@@ -333,7 +333,7 @@ class PreprintArticlesListView(GenericFacetedListView):
                 | Q(keywords__word__icontains=search_term)
             ).distinct()
         return queryset.filter(
-            preprint__isnull=False,
+            preprint__date_accepted__isnull=False,
         ).select_related('preprint').order_by(self.get_order_by())
 
     def get_facets(self):
@@ -362,7 +362,7 @@ def preprint_version(request, article_id, version_number):
         submission_models.Article,
         pk=article_id,
         journal=request.journal,
-        preprint__isnull=False,
+        preprint__date_accepted__isnull=False,
     )
     preprint_version = get_object_or_404(
         repository_models.PreprintVersion,
@@ -412,7 +412,7 @@ def _get_preprint_version_for_request(request, article_id, version_number):
         submission_models.Article,
         pk=article_id,
         journal=request.journal,
-        preprint__isnull=False,
+        preprint__date_accepted__isnull=False,
     )
     return article, get_object_or_404(
         repository_models.PreprintVersion,
