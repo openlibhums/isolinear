@@ -200,7 +200,7 @@ class Command(BaseCommand):
                             review.pk,
                             review.status,
                             review.reviewer,
-                            self.anonymous_note(review),
+                            self.describe_review(review),
                         )
                     )
                 return
@@ -272,13 +272,11 @@ class Command(BaseCommand):
 
         if not self.commit:
             self.stdout.write(
-                '    review {} ({}, {}): would import{}{}.'.format(
+                '    review {} ({}, {}): would import{}.'.format(
                     review.pk,
                     review.status,
                     review.reviewer,
-                    ', decision {}'.format(self.decision_for(review))
-                    if review.status == 'complete' else '',
-                    self.anonymous_note(review),
+                    self.describe_review(review, article),
                 )
             )
             return
@@ -301,7 +299,16 @@ class Command(BaseCommand):
             display_public=review.status == 'complete',
         )
 
-        if review.status == 'accepted':
+        if self.withdraws_open_invitation(review, article):
+            assignment.date_accepted = review.date_accepted
+            assignment.decision = RD.DECISION_WITHDRAWN.value
+            assignment.date_complete = timezone.now()
+            assignment.is_complete = True
+            assignment.comments_for_editor = (
+                review.status_reason
+                or 'Withdrawn on import: the article was already published.'
+            )
+        elif review.status == 'accepted':
             assignment.date_accepted = review.date_accepted
         elif review.status == 'declined':
             assignment.date_declined = review.date_completed
@@ -333,16 +340,30 @@ class Command(BaseCommand):
             element.snapshot(answer)
 
         self.stdout.write(
-            '    review {} ({}, {}): imported as assignment {}{}{}.'.format(
+            '    review {} ({}, {}): imported as assignment {}{}.'.format(
                 review.pk,
                 review.status,
                 review.reviewer,
                 assignment.pk,
-                ', decision {}'.format(assignment.decision)
-                if assignment.decision else '',
-                self.anonymous_note(review),
+                self.describe_review(review, article),
             )
         )
+
+    def withdraws_open_invitation(self, review, article):
+        """Open invitations on already published articles come across withdrawn."""
+        return (
+            article is not None
+            and review.status in ('new', 'accepted')
+            and article.is_published
+        )
+
+    def describe_review(self, review, article=None):
+        note = ''
+        if review.status == 'complete':
+            note += ', decision {}'.format(self.decision_for(review))
+        if self.withdraws_open_invitation(review, article):
+            note += ' (withdrawn: article already published)'
+        return note + self.anonymous_note(review)
 
     def anonymous_note(self, review):
         if review.anonymous:
