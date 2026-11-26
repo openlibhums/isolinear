@@ -4,7 +4,7 @@ from utils.install import update_settings
 PLUGIN_NAME = 'Isolinear'
 DESCRIPTION = 'Combines repository and journal workflows.'
 AUTHOR = 'Open Library of Humanities'
-VERSION = '0.1'
+VERSION = '0.1.1'
 SHORT_NAME = 'isolinear'
 DISPLAY_NAME = 'Isolinear'
 MANAGER_URL = 'isolinear_index'
